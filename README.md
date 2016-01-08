@@ -12,8 +12,9 @@ Flash `keymaps/keymap_osx_keikun17.hex`
 
 ## Compile
 
-- Download and install Crosspack (previously AVR macpack)
-- brew install dfu-programmer
+- Download and install Crosspack (previously AVR macpack) at https://www.obdev.at/products/crosspack/download.html
+- Restart terminal
+- `brew install dfu-programmer`
 - run `make clean & make KEYMAP=osx_keikun17`
 - Flash `ergodox_ez.hex` at the root dir of this project`
 
