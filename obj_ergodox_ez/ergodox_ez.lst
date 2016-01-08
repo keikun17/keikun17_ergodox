@@ -1,0 +1,849 @@
+   1               		.file	"ergodox_ez.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.matrix_init_user,"ax",@progbits
+  11               		.weak	matrix_init_user
+  13               	matrix_init_user:
+  14               	.LFB120:
+  15               		.file 1 "ergodox_ez.c"
+   1:ergodox_ez.c  **** #include "ergodox_ez.h"
+   2:ergodox_ez.c  **** #include "i2cmaster.h"
+   3:ergodox_ez.c  **** 
+   4:ergodox_ez.c  **** bool i2c_initialized = 0;
+   5:ergodox_ez.c  **** uint8_t mcp23018_status = 0x20;
+   6:ergodox_ez.c  **** 
+   7:ergodox_ez.c  **** __attribute__ ((weak))
+   8:ergodox_ez.c  **** void * matrix_init_user(void) {
+  16               		.loc 1 8 0
+  17               		.cfi_startproc
+  18               	/* prologue: function */
+  19               	/* frame size = 0 */
+  20               	/* stack size = 0 */
+  21               	.L__stack_usage = 0
+   9:ergodox_ez.c  ****     return NULL;
+  10:ergodox_ez.c  **** };
+  22               		.loc 1 10 0
+  23 0000 80E0      		ldi r24,0
+  24 0002 90E0      		ldi r25,0
+  25 0004 0895      		ret
+  26               		.cfi_endproc
+  27               	.LFE120:
+  29               		.section	.text.matrix_scan_user,"ax",@progbits
+  30               		.weak	matrix_scan_user
+  32               	matrix_scan_user:
+  33               	.LFB121:
+  11:ergodox_ez.c  **** 
+  12:ergodox_ez.c  **** __attribute__ ((weak))
+  13:ergodox_ez.c  **** void * matrix_scan_user(void) {
+  34               		.loc 1 13 0
+  35               		.cfi_startproc
+  36               	/* prologue: function */
+  37               	/* frame size = 0 */
+  38               	/* stack size = 0 */
+  39               	.L__stack_usage = 0
+  14:ergodox_ez.c  ****     return NULL;
+  15:ergodox_ez.c  **** };
+  40               		.loc 1 15 0
+  41 0000 80E0      		ldi r24,0
+  42 0002 90E0      		ldi r25,0
+  43 0004 0895      		ret
+  44               		.cfi_endproc
+  45               	.LFE121:
+  47               		.section	.text.matrix_scan_kb,"ax",@progbits
+  48               	.global	matrix_scan_kb
+  50               	matrix_scan_kb:
+  51               	.LFB123:
+  16:ergodox_ez.c  **** 
+  17:ergodox_ez.c  **** void * matrix_init_kb(void) {
+  18:ergodox_ez.c  ****    // keyboard LEDs (see "PWM on ports OC1(A|B|C)" in "teensy-2-0.md")
+  19:ergodox_ez.c  ****     TCCR1A = 0b10101001;  // set and configure fast PWM
+  20:ergodox_ez.c  ****     TCCR1B = 0b00001001;  // set and configure fast PWM
+  21:ergodox_ez.c  **** 
+  22:ergodox_ez.c  ****     // (tied to Vcc for hardware convenience)
+  23:ergodox_ez.c  ****     DDRB  &= ~(1<<4);  // set B(4) as input
+  24:ergodox_ez.c  ****     PORTB &= ~(1<<4);  // set B(4) internal pull-up disabled
+  25:ergodox_ez.c  **** 
+  26:ergodox_ez.c  ****     // unused pins - C7, D4, D5, D7, E6
+  27:ergodox_ez.c  ****     // set as input with internal pull-ip enabled
+  28:ergodox_ez.c  ****     DDRC  &= ~(1<<7);
+  29:ergodox_ez.c  ****     DDRD  &= ~(1<<7 | 1<<5 | 1<<4);
+  30:ergodox_ez.c  ****     DDRE  &= ~(1<<6);
+  31:ergodox_ez.c  ****     PORTC |=  (1<<7);
+  32:ergodox_ez.c  ****     PORTD |=  (1<<7 | 1<<5 | 1<<4);
+  33:ergodox_ez.c  ****     PORTE |=  (1<<6);
+  34:ergodox_ez.c  **** 
+  35:ergodox_ez.c  ****     ergodox_blink_all_leds();
+  36:ergodox_ez.c  **** 
+  37:ergodox_ez.c  ****     if (matrix_init_user) {
+  38:ergodox_ez.c  ****         (*matrix_init_user)();
+  39:ergodox_ez.c  ****     }
+  40:ergodox_ez.c  **** 
+  41:ergodox_ez.c  ****     return NULL;
+  42:ergodox_ez.c  **** };
+  43:ergodox_ez.c  **** 
+  44:ergodox_ez.c  **** void * matrix_scan_kb(void) {
+  52               		.loc 1 44 0
+  53               		.cfi_startproc
+  54               	/* prologue: function */
+  55               	/* frame size = 0 */
+  56               	/* stack size = 0 */
+  57               	.L__stack_usage = 0
+  45:ergodox_ez.c  **** 
+  46:ergodox_ez.c  ****     if (matrix_scan_user) {
+  58               		.loc 1 46 0
+  59 0000 80E0      		ldi r24,lo8(gs(matrix_scan_user))
+  60 0002 90E0      		ldi r25,hi8(gs(matrix_scan_user))
+  61 0004 892B      		or r24,r25
+  62 0006 01F0      		breq .L4
+  47:ergodox_ez.c  ****         (*matrix_scan_user)();
+  63               		.loc 1 47 0
+  64 0008 0E94 0000 		call matrix_scan_user
+  65               	.LVL0:
+  66               	.L4:
+  48:ergodox_ez.c  ****     }
+  49:ergodox_ez.c  **** 
+  50:ergodox_ez.c  ****     return NULL;
+  51:ergodox_ez.c  **** };
+  67               		.loc 1 51 0
+  68 000c 80E0      		ldi r24,0
+  69 000e 90E0      		ldi r25,0
+  70 0010 0895      		ret
+  71               		.cfi_endproc
+  72               	.LFE123:
+  74               		.section	.text.ergodox_blink_all_leds,"ax",@progbits
+  75               	.global	ergodox_blink_all_leds
+  77               	ergodox_blink_all_leds:
+  78               	.LFB124:
+  52:ergodox_ez.c  **** 
+  53:ergodox_ez.c  **** 
+  54:ergodox_ez.c  **** void ergodox_blink_all_leds(void)
+  55:ergodox_ez.c  **** {
+  79               		.loc 1 55 0
+  80               		.cfi_startproc
+  81               	/* prologue: function */
+  82               	/* frame size = 0 */
+  83               	/* stack size = 0 */
+  84               	.L__stack_usage = 0
+  85               	.LBB68:
+  86               	.LBB69:
+  87               	.LBB70:
+  88               		.file 2 "ergodox_ez.h"
+   1:ergodox_ez.h  **** #ifndef ERGODOX_EZ_H
+   2:ergodox_ez.h  **** #define ERGODOX_EZ_H
+   3:ergodox_ez.h  **** 
+   4:ergodox_ez.h  **** #include "matrix.h"
+   5:ergodox_ez.h  **** #include "keymap_common.h"
+   6:ergodox_ez.h  **** #include "backlight.h"
+   7:ergodox_ez.h  **** #include <stddef.h>
+   8:ergodox_ez.h  **** #include <stdint.h>
+   9:ergodox_ez.h  **** #include <stdbool.h>
+  10:ergodox_ez.h  **** #include <avr/io.h>
+  11:ergodox_ez.h  **** #include "i2cmaster.h"
+  12:ergodox_ez.h  **** #include <util/delay.h>
+  13:ergodox_ez.h  **** 
+  14:ergodox_ez.h  **** #define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
+  15:ergodox_ez.h  **** #define CPU_16MHz       0x00
+  16:ergodox_ez.h  **** 
+  17:ergodox_ez.h  **** // I2C aliases and register addresses (see "mcp23018.md")
+  18:ergodox_ez.h  **** #define I2C_ADDR        0b0100000
+  19:ergodox_ez.h  **** #define I2C_ADDR_WRITE  ( (I2C_ADDR<<1) | I2C_WRITE )
+  20:ergodox_ez.h  **** #define I2C_ADDR_READ   ( (I2C_ADDR<<1) | I2C_READ  )
+  21:ergodox_ez.h  **** #define IODIRA          0x00            // i/o direction register
+  22:ergodox_ez.h  **** #define IODIRB          0x01
+  23:ergodox_ez.h  **** #define GPPUA           0x0C            // GPIO pull-up resistor register
+  24:ergodox_ez.h  **** #define GPPUB           0x0D
+  25:ergodox_ez.h  **** #define GPIOA           0x12            // general purpose i/o port register (write modifies OLAT)
+  26:ergodox_ez.h  **** #define GPIOB           0x13
+  27:ergodox_ez.h  **** #define OLATA           0x14            // output latch register
+  28:ergodox_ez.h  **** #define OLATB           0x15
+  29:ergodox_ez.h  **** 
+  30:ergodox_ez.h  **** extern uint8_t mcp23018_status;
+  31:ergodox_ez.h  **** 
+  32:ergodox_ez.h  **** void init_ergodox(void);
+  33:ergodox_ez.h  **** void ergodox_blink_all_leds(void);
+  34:ergodox_ez.h  **** uint8_t init_mcp23018(void);
+  35:ergodox_ez.h  **** uint8_t ergodox_left_leds_update(void);
+  36:ergodox_ez.h  **** 
+  37:ergodox_ez.h  **** #define LED_BRIGHTNESS_LO       15
+  38:ergodox_ez.h  **** #define LED_BRIGHTNESS_HI       255
+  39:ergodox_ez.h  **** 
+  40:ergodox_ez.h  **** 
+  41:ergodox_ez.h  **** inline void ergodox_board_led_on(void)      { DDRD |=  (1<<6); PORTD |=  (1<<6); }
+  42:ergodox_ez.h  **** inline void ergodox_right_led_1_on(void)    { DDRB |=  (1<<5); PORTB |=  (1<<5); }
+  43:ergodox_ez.h  **** inline void ergodox_right_led_2_on(void)    { DDRB |=  (1<<6); PORTB |=  (1<<6); }
+  44:ergodox_ez.h  **** inline void ergodox_right_led_3_on(void)    { DDRB |=  (1<<7); PORTB |=  (1<<7); }
+  45:ergodox_ez.h  **** inline void ergodox_right_led_on(uint8_t led) { DDRB |= (1<<(led+4)); PORTB |= (1<<(led+4)); }
+  46:ergodox_ez.h  **** 
+  47:ergodox_ez.h  **** inline void ergodox_board_led_off(void)     { DDRD &= ~(1<<6); PORTD &= ~(1<<6); }
+  89               		.loc 2 47 0
+  90 0000 5698      		cbi 0xa,6
+  91 0002 5E98      		cbi 0xb,6
+  92               	.LBE70:
+  93               	.LBE69:
+  94               	.LBB71:
+  95               	.LBB72:
+  48:ergodox_ez.h  **** inline void ergodox_right_led_1_off(void)   { DDRB &= ~(1<<5); PORTB &= ~(1<<5); }
+  96               		.loc 2 48 0
+  97 0004 2598      		cbi 0x4,5
+  98 0006 2D98      		cbi 0x5,5
+  99               	.LBE72:
+ 100               	.LBE71:
+ 101               	.LBB73:
+ 102               	.LBB74:
+  49:ergodox_ez.h  **** inline void ergodox_right_led_2_off(void)   { DDRB &= ~(1<<6); PORTB &= ~(1<<6); }
+ 103               		.loc 2 49 0
+ 104 0008 2698      		cbi 0x4,6
+ 105 000a 2E98      		cbi 0x5,6
+ 106               	.LBE74:
+ 107               	.LBE73:
+ 108               	.LBB75:
+ 109               	.LBB76:
+  50:ergodox_ez.h  **** inline void ergodox_right_led_3_off(void)   { DDRB &= ~(1<<7); PORTB &= ~(1<<7); }
+ 110               		.loc 2 50 0
+ 111 000c 2798      		cbi 0x4,7
+ 112 000e 2F98      		cbi 0x5,7
+ 113               	.LVL1:
+ 114               	.LBE76:
+ 115               	.LBE75:
+ 116               	.LBE68:
+ 117               	.LBB77:
+ 118               	.LBB78:
+ 119               	.LBB79:
+  51:ergodox_ez.h  **** inline void ergodox_right_led_off(uint8_t led) { DDRB &= ~(1<<(led+4)); PORTB &= ~(1<<(led+4)); }
+  52:ergodox_ez.h  **** 
+  53:ergodox_ez.h  **** inline void ergodox_led_all_on(void)
+  54:ergodox_ez.h  **** {
+  55:ergodox_ez.h  ****     ergodox_board_led_on();
+  56:ergodox_ez.h  ****     ergodox_right_led_1_on();
+  57:ergodox_ez.h  ****     ergodox_right_led_2_on();
+  58:ergodox_ez.h  ****     ergodox_right_led_3_on();
+  59:ergodox_ez.h  **** }
+  60:ergodox_ez.h  **** 
+  61:ergodox_ez.h  **** inline void ergodox_led_all_off(void)
+  62:ergodox_ez.h  **** {
+  63:ergodox_ez.h  ****     ergodox_board_led_off();
+  64:ergodox_ez.h  ****     ergodox_right_led_1_off();
+  65:ergodox_ez.h  ****     ergodox_right_led_2_off();
+  66:ergodox_ez.h  ****     ergodox_right_led_3_off();
+  67:ergodox_ez.h  **** }
+  68:ergodox_ez.h  **** 
+  69:ergodox_ez.h  **** inline void ergodox_right_led_1_set(uint8_t n)    { OCR1A = n; }
+ 120               		.loc 2 69 0
+ 121 0010 8FEF      		ldi r24,lo8(-1)
+ 122 0012 90E0      		ldi r25,0
+ 123 0014 9093 8900 		sts 136+1,r25
+ 124 0018 8093 8800 		sts 136,r24
+ 125               	.LVL2:
+ 126               	.LBE79:
+ 127               	.LBE78:
+ 128               	.LBB80:
+ 129               	.LBB81:
+  70:ergodox_ez.h  **** inline void ergodox_right_led_2_set(uint8_t n)    { OCR1B = n; }
+ 130               		.loc 2 70 0
+ 131 001c 9093 8B00 		sts 138+1,r25
+ 132 0020 8093 8A00 		sts 138,r24
+ 133               	.LVL3:
+ 134               	.LBE81:
+ 135               	.LBE80:
+ 136               	.LBB82:
+ 137               	.LBB83:
+  71:ergodox_ez.h  **** inline void ergodox_right_led_3_set(uint8_t n)    { OCR1C = n; }
+ 138               		.loc 2 71 0
+ 139 0024 9093 8D00 		sts 140+1,r25
+ 140 0028 8093 8C00 		sts 140,r24
+ 141               	.LBE83:
+ 142               	.LBE82:
+ 143               	.LBE77:
+ 144               	.LBB84:
+ 145               	.LBB85:
+  42:ergodox_ez.h  **** inline void ergodox_right_led_1_on(void)    { DDRB |=  (1<<5); PORTB |=  (1<<5); }
+ 146               		.loc 2 42 0
+ 147 002c 259A      		sbi 0x4,5
+ 148 002e 2D9A      		sbi 0x5,5
+ 149               	.LVL4:
+ 150               	.LBE85:
+ 151               	.LBE84:
+ 152               	.LBB86:
+ 153               	.LBB87:
+ 154               		.file 3 "/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h"
+   1:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   6:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   9:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  12:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  17:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  21:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  33:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* $Id$ */
+  34:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  35:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  38:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  41:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  42:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  46:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \file */
+  47:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \code
+  49:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \endcode
+  53:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  54:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     used.
+  58:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  59:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  68:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  77:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  81:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** */
+  82:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  83:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  87:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  88:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  93:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  94:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  97:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  98:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+ 103:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 104:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /**
+ 105:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 107:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 109:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 112:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 114:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 120:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 125:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 129:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 132:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 140:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  */
+ 141:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** void
+ 142:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** {
+ 144:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	double __tmp ; 
+ 145:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 146:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 147:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 148:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 149:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 151:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 152:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 153:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 154:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 155:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 156:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 157:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 158:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#else
+ 159:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//round up by default
+ 160:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 161:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#endif
+ 162:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 163:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 155               		.loc 3 163 0
+ 156 0030 2FEF      		ldi r18,lo8(159999)
+ 157 0032 80E7      		ldi r24,hi8(159999)
+ 158 0034 92E0      		ldi r25,hlo8(159999)
+ 159 0036 2150      		1: subi r18,1
+ 160 0038 8040      		sbci r24,0
+ 161 003a 9040      		sbci r25,0
+ 162 003c 01F4      		brne 1b
+ 163 003e 00C0      		rjmp .
+ 164 0040 0000      		nop
+ 165               	.LBE87:
+ 166               	.LBE86:
+ 167               	.LBB88:
+ 168               	.LBB89:
+  43:ergodox_ez.h  **** inline void ergodox_right_led_2_on(void)    { DDRB |=  (1<<6); PORTB |=  (1<<6); }
+ 169               		.loc 2 43 0
+ 170 0042 269A      		sbi 0x4,6
+ 171 0044 2E9A      		sbi 0x5,6
+ 172               	.LVL5:
+ 173               	.LBE89:
+ 174               	.LBE88:
+ 175               	.LBB90:
+ 176               	.LBB91:
+ 177               		.loc 3 163 0
+ 178 0046 2FEF      		ldi r18,lo8(159999)
+ 179 0048 80E7      		ldi r24,hi8(159999)
+ 180 004a 92E0      		ldi r25,hlo8(159999)
+ 181 004c 2150      		1: subi r18,1
+ 182 004e 8040      		sbci r24,0
+ 183 0050 9040      		sbci r25,0
+ 184 0052 01F4      		brne 1b
+ 185 0054 00C0      		rjmp .
+ 186 0056 0000      		nop
+ 187               	.LBE91:
+ 188               	.LBE90:
+ 189               	.LBB92:
+ 190               	.LBB93:
+  44:ergodox_ez.h  **** inline void ergodox_right_led_3_on(void)    { DDRB |=  (1<<7); PORTB |=  (1<<7); }
+ 191               		.loc 2 44 0
+ 192 0058 279A      		sbi 0x4,7
+ 193 005a 2F9A      		sbi 0x5,7
+ 194               	.LVL6:
+ 195               	.LBE93:
+ 196               	.LBE92:
+ 197               	.LBB94:
+ 198               	.LBB95:
+ 199               		.loc 3 163 0
+ 200 005c 2FEF      		ldi r18,lo8(159999)
+ 201 005e 80E7      		ldi r24,hi8(159999)
+ 202 0060 92E0      		ldi r25,hlo8(159999)
+ 203 0062 2150      		1: subi r18,1
+ 204 0064 8040      		sbci r24,0
+ 205 0066 9040      		sbci r25,0
+ 206 0068 01F4      		brne 1b
+ 207 006a 00C0      		rjmp .
+ 208 006c 0000      		nop
+ 209               	.LBE95:
+ 210               	.LBE94:
+ 211               	.LBB96:
+ 212               	.LBB97:
+  48:ergodox_ez.h  **** inline void ergodox_right_led_1_off(void)   { DDRB &= ~(1<<5); PORTB &= ~(1<<5); }
+ 213               		.loc 2 48 0
+ 214 006e 2598      		cbi 0x4,5
+ 215 0070 2D98      		cbi 0x5,5
+ 216               	.LVL7:
+ 217               	.LBE97:
+ 218               	.LBE96:
+ 219               	.LBB98:
+ 220               	.LBB99:
+ 221               		.loc 3 163 0
+ 222 0072 2FEF      		ldi r18,lo8(159999)
+ 223 0074 80E7      		ldi r24,hi8(159999)
+ 224 0076 92E0      		ldi r25,hlo8(159999)
+ 225 0078 2150      		1: subi r18,1
+ 226 007a 8040      		sbci r24,0
+ 227 007c 9040      		sbci r25,0
+ 228 007e 01F4      		brne 1b
+ 229 0080 00C0      		rjmp .
+ 230 0082 0000      		nop
+ 231               	.LBE99:
+ 232               	.LBE98:
+ 233               	.LBB100:
+ 234               	.LBB101:
+  49:ergodox_ez.h  **** inline void ergodox_right_led_2_off(void)   { DDRB &= ~(1<<6); PORTB &= ~(1<<6); }
+ 235               		.loc 2 49 0
+ 236 0084 2698      		cbi 0x4,6
+ 237 0086 2E98      		cbi 0x5,6
+ 238               	.LVL8:
+ 239               	.LBE101:
+ 240               	.LBE100:
+ 241               	.LBB102:
+ 242               	.LBB103:
+ 243               		.loc 3 163 0
+ 244 0088 2FEF      		ldi r18,lo8(159999)
+ 245 008a 80E7      		ldi r24,hi8(159999)
+ 246 008c 92E0      		ldi r25,hlo8(159999)
+ 247 008e 2150      		1: subi r18,1
+ 248 0090 8040      		sbci r24,0
+ 249 0092 9040      		sbci r25,0
+ 250 0094 01F4      		brne 1b
+ 251 0096 00C0      		rjmp .
+ 252 0098 0000      		nop
+ 253               	.LBE103:
+ 254               	.LBE102:
+ 255               	.LBB104:
+ 256               	.LBB105:
+  50:ergodox_ez.h  **** inline void ergodox_right_led_3_off(void)   { DDRB &= ~(1<<7); PORTB &= ~(1<<7); }
+ 257               		.loc 2 50 0
+ 258 009a 2798      		cbi 0x4,7
+ 259 009c 2F98      		cbi 0x5,7
+ 260               	.LBE105:
+ 261               	.LBE104:
+ 262               	.LBB106:
+ 263               	.LBB107:
+ 264               	.LBB108:
+  47:ergodox_ez.h  **** inline void ergodox_board_led_off(void)     { DDRD &= ~(1<<6); PORTD &= ~(1<<6); }
+ 265               		.loc 2 47 0
+ 266 009e 5698      		cbi 0xa,6
+ 267 00a0 5E98      		cbi 0xb,6
+ 268               	.LBE108:
+ 269               	.LBE107:
+ 270               	.LBB109:
+ 271               	.LBB110:
+  48:ergodox_ez.h  **** inline void ergodox_right_led_1_off(void)   { DDRB &= ~(1<<5); PORTB &= ~(1<<5); }
+ 272               		.loc 2 48 0
+ 273 00a2 2598      		cbi 0x4,5
+ 274 00a4 2D98      		cbi 0x5,5
+ 275               	.LBE110:
+ 276               	.LBE109:
+ 277               	.LBB111:
+ 278               	.LBB112:
+  49:ergodox_ez.h  **** inline void ergodox_right_led_2_off(void)   { DDRB &= ~(1<<6); PORTB &= ~(1<<6); }
+ 279               		.loc 2 49 0
+ 280 00a6 2698      		cbi 0x4,6
+ 281 00a8 2E98      		cbi 0x5,6
+ 282               	.LBE112:
+ 283               	.LBE111:
+ 284               	.LBB113:
+ 285               	.LBB114:
+  50:ergodox_ez.h  **** inline void ergodox_right_led_3_off(void)   { DDRB &= ~(1<<7); PORTB &= ~(1<<7); }
+ 286               		.loc 2 50 0
+ 287 00aa 2798      		cbi 0x4,7
+ 288 00ac 2F98      		cbi 0x5,7
+ 289 00ae 0895      		ret
+ 290               	.LBE114:
+ 291               	.LBE113:
+ 292               	.LBE106:
+ 293               		.cfi_endproc
+ 294               	.LFE124:
+ 296               		.section	.text.matrix_init_kb,"ax",@progbits
+ 297               	.global	matrix_init_kb
+ 299               	matrix_init_kb:
+ 300               	.LFB122:
+  17:ergodox_ez.c  **** void * matrix_init_kb(void) {
+ 301               		.loc 1 17 0
+ 302               		.cfi_startproc
+ 303               	/* prologue: function */
+ 304               	/* frame size = 0 */
+ 305               	/* stack size = 0 */
+ 306               	.L__stack_usage = 0
+  19:ergodox_ez.c  ****     TCCR1A = 0b10101001;  // set and configure fast PWM
+ 307               		.loc 1 19 0
+ 308 0000 89EA      		ldi r24,lo8(-87)
+ 309 0002 8093 8000 		sts 128,r24
+  20:ergodox_ez.c  ****     TCCR1B = 0b00001001;  // set and configure fast PWM
+ 310               		.loc 1 20 0
+ 311 0006 89E0      		ldi r24,lo8(9)
+ 312 0008 8093 8100 		sts 129,r24
+  23:ergodox_ez.c  ****     DDRB  &= ~(1<<4);  // set B(4) as input
+ 313               		.loc 1 23 0
+ 314 000c 2498      		cbi 0x4,4
+  24:ergodox_ez.c  ****     PORTB &= ~(1<<4);  // set B(4) internal pull-up disabled
+ 315               		.loc 1 24 0
+ 316 000e 2C98      		cbi 0x5,4
+  28:ergodox_ez.c  ****     DDRC  &= ~(1<<7);
+ 317               		.loc 1 28 0
+ 318 0010 3F98      		cbi 0x7,7
+  29:ergodox_ez.c  ****     DDRD  &= ~(1<<7 | 1<<5 | 1<<4);
+ 319               		.loc 1 29 0
+ 320 0012 8AB1      		in r24,0xa
+ 321 0014 8F74      		andi r24,lo8(79)
+ 322 0016 8AB9      		out 0xa,r24
+  30:ergodox_ez.c  ****     DDRE  &= ~(1<<6);
+ 323               		.loc 1 30 0
+ 324 0018 6E98      		cbi 0xd,6
+  31:ergodox_ez.c  ****     PORTC |=  (1<<7);
+ 325               		.loc 1 31 0
+ 326 001a 479A      		sbi 0x8,7
+  32:ergodox_ez.c  ****     PORTD |=  (1<<7 | 1<<5 | 1<<4);
+ 327               		.loc 1 32 0
+ 328 001c 8BB1      		in r24,0xb
+ 329 001e 806B      		ori r24,lo8(-80)
+ 330 0020 8BB9      		out 0xb,r24
+  33:ergodox_ez.c  ****     PORTE |=  (1<<6);
+ 331               		.loc 1 33 0
+ 332 0022 769A      		sbi 0xe,6
+  35:ergodox_ez.c  ****     ergodox_blink_all_leds();
+ 333               		.loc 1 35 0
+ 334 0024 0E94 0000 		call ergodox_blink_all_leds
+ 335               	.LVL9:
+  37:ergodox_ez.c  ****     if (matrix_init_user) {
+ 336               		.loc 1 37 0
+ 337 0028 80E0      		ldi r24,lo8(gs(matrix_init_user))
+ 338 002a 90E0      		ldi r25,hi8(gs(matrix_init_user))
+ 339 002c 892B      		or r24,r25
+ 340 002e 01F0      		breq .L11
+  38:ergodox_ez.c  ****         (*matrix_init_user)();
+ 341               		.loc 1 38 0
+ 342 0030 0E94 0000 		call matrix_init_user
+ 343               	.LVL10:
+ 344               	.L11:
+  42:ergodox_ez.c  **** };
+ 345               		.loc 1 42 0
+ 346 0034 80E0      		ldi r24,0
+ 347 0036 90E0      		ldi r25,0
+ 348 0038 0895      		ret
+ 349               		.cfi_endproc
+ 350               	.LFE122:
+ 352               		.section	.text.init_mcp23018,"ax",@progbits
+ 353               	.global	init_mcp23018
+ 355               	init_mcp23018:
+ 356               	.LFB125:
+  56:ergodox_ez.c  ****     ergodox_led_all_off();
+  57:ergodox_ez.c  ****     ergodox_led_all_set(LED_BRIGHTNESS_HI);
+  58:ergodox_ez.c  ****     ergodox_right_led_1_on();
+  59:ergodox_ez.c  ****     _delay_ms(50);
+  60:ergodox_ez.c  ****     ergodox_right_led_2_on();
+  61:ergodox_ez.c  ****     _delay_ms(50);
+  62:ergodox_ez.c  ****     ergodox_right_led_3_on();
+  63:ergodox_ez.c  ****     _delay_ms(50);
+  64:ergodox_ez.c  ****     ergodox_right_led_1_off();
+  65:ergodox_ez.c  ****     _delay_ms(50);
+  66:ergodox_ez.c  ****     ergodox_right_led_2_off();
+  67:ergodox_ez.c  ****     _delay_ms(50);
+  68:ergodox_ez.c  ****     ergodox_right_led_3_off();
+  69:ergodox_ez.c  ****     //ergodox_led_all_on();
+  70:ergodox_ez.c  ****     //_delay_ms(333);
+  71:ergodox_ez.c  ****     ergodox_led_all_off();
+  72:ergodox_ez.c  **** }
+  73:ergodox_ez.c  **** 
+  74:ergodox_ez.c  **** uint8_t init_mcp23018(void) {
+ 357               		.loc 1 74 0
+ 358               		.cfi_startproc
+ 359               	/* prologue: function */
+ 360               	/* frame size = 0 */
+ 361               	/* stack size = 0 */
+ 362               	.L__stack_usage = 0
+  75:ergodox_ez.c  ****     mcp23018_status = 0x20;
+ 363               		.loc 1 75 0
+ 364 0000 80E2      		ldi r24,lo8(32)
+ 365 0002 8093 0000 		sts mcp23018_status,r24
+  76:ergodox_ez.c  **** 
+  77:ergodox_ez.c  ****     // I2C subsystem
+  78:ergodox_ez.c  ****     if (i2c_initialized == 0) {
+ 366               		.loc 1 78 0
+ 367 0006 8091 0000 		lds r24,i2c_initialized
+ 368 000a 8111      		cpse r24,__zero_reg__
+ 369 000c 00C0      		rjmp .L16
+  79:ergodox_ez.c  ****         i2c_init();  // on pins D(1,0)
+ 370               		.loc 1 79 0
+ 371 000e 0E94 0000 		call i2c_init
+ 372               	.LVL11:
+  80:ergodox_ez.c  ****         i2c_initialized++;
+ 373               		.loc 1 80 0
+ 374 0012 81E0      		ldi r24,lo8(1)
+ 375 0014 8093 0000 		sts i2c_initialized,r24
+ 376               	.LVL12:
+ 377               	.LBB115:
+ 378               	.LBB116:
+ 379               		.loc 3 163 0
+ 380 0018 2FEF      		ldi r18,lo8(3199999)
+ 381 001a 83ED      		ldi r24,hi8(3199999)
+ 382 001c 90E3      		ldi r25,hlo8(3199999)
+ 383 001e 2150      		1: subi r18,1
+ 384 0020 8040      		sbci r24,0
+ 385 0022 9040      		sbci r25,0
+ 386 0024 01F4      		brne 1b
+ 387 0026 00C0      		rjmp .
+ 388 0028 0000      		nop
+ 389               	.LVL13:
+ 390               	.L16:
+ 391               	.LBE116:
+ 392               	.LBE115:
+  81:ergodox_ez.c  ****         _delay_ms(1000);
+  82:ergodox_ez.c  ****     }
+  83:ergodox_ez.c  **** 
+  84:ergodox_ez.c  ****     // set pin direction
+  85:ergodox_ez.c  ****     // - unused  : input  : 1
+  86:ergodox_ez.c  ****     // - input   : input  : 1
+  87:ergodox_ez.c  ****     // - driving : output : 0
+  88:ergodox_ez.c  ****     mcp23018_status = i2c_start(I2C_ADDR_WRITE);    if (mcp23018_status) goto out;
+ 393               		.loc 1 88 0
+ 394 002a 80E4      		ldi r24,lo8(64)
+ 395 002c 0E94 0000 		call i2c_start
+ 396               	.LVL14:
+ 397 0030 8093 0000 		sts mcp23018_status,r24
+ 398 0034 8111      		cpse r24,__zero_reg__
+ 399 0036 00C0      		rjmp .L18
+  89:ergodox_ez.c  ****     mcp23018_status = i2c_write(IODIRA);            if (mcp23018_status) goto out;
+ 400               		.loc 1 89 0
+ 401 0038 0E94 0000 		call i2c_write
+ 402               	.LVL15:
+ 403 003c 8093 0000 		sts mcp23018_status,r24
+ 404 0040 8111      		cpse r24,__zero_reg__
+ 405 0042 00C0      		rjmp .L18
+  90:ergodox_ez.c  ****     mcp23018_status = i2c_write(0b00000000);        if (mcp23018_status) goto out;
+ 406               		.loc 1 90 0
+ 407 0044 0E94 0000 		call i2c_write
+ 408               	.LVL16:
+ 409 0048 8093 0000 		sts mcp23018_status,r24
+ 410 004c 8111      		cpse r24,__zero_reg__
+ 411 004e 00C0      		rjmp .L18
+  91:ergodox_ez.c  ****     mcp23018_status = i2c_write(0b00111111);        if (mcp23018_status) goto out;
+ 412               		.loc 1 91 0
+ 413 0050 8FE3      		ldi r24,lo8(63)
+ 414 0052 0E94 0000 		call i2c_write
+ 415               	.LVL17:
+ 416 0056 8093 0000 		sts mcp23018_status,r24
+ 417 005a 8111      		cpse r24,__zero_reg__
+ 418 005c 00C0      		rjmp .L18
+  92:ergodox_ez.c  ****     i2c_stop();
+ 419               		.loc 1 92 0
+ 420 005e 0E94 0000 		call i2c_stop
+ 421               	.LVL18:
+  93:ergodox_ez.c  **** 
+  94:ergodox_ez.c  ****     // set pull-up
+  95:ergodox_ez.c  ****     // - unused  : on  : 1
+  96:ergodox_ez.c  ****     // - input   : on  : 1
+  97:ergodox_ez.c  ****     // - driving : off : 0
+  98:ergodox_ez.c  ****     mcp23018_status = i2c_start(I2C_ADDR_WRITE);    if (mcp23018_status) goto out;
+ 422               		.loc 1 98 0
+ 423 0062 80E4      		ldi r24,lo8(64)
+ 424 0064 0E94 0000 		call i2c_start
+ 425               	.LVL19:
+ 426 0068 8093 0000 		sts mcp23018_status,r24
+ 427 006c 8111      		cpse r24,__zero_reg__
+ 428 006e 00C0      		rjmp .L18
+  99:ergodox_ez.c  ****     mcp23018_status = i2c_write(GPPUA);             if (mcp23018_status) goto out;
+ 429               		.loc 1 99 0
+ 430 0070 8CE0      		ldi r24,lo8(12)
+ 431 0072 0E94 0000 		call i2c_write
+ 432               	.LVL20:
+ 433 0076 8093 0000 		sts mcp23018_status,r24
+ 434 007a 8111      		cpse r24,__zero_reg__
+ 435 007c 00C0      		rjmp .L18
+ 100:ergodox_ez.c  ****     mcp23018_status = i2c_write(0b00000000);        if (mcp23018_status) goto out;
+ 436               		.loc 1 100 0
+ 437 007e 0E94 0000 		call i2c_write
+ 438               	.LVL21:
+ 439 0082 8093 0000 		sts mcp23018_status,r24
+ 440 0086 8111      		cpse r24,__zero_reg__
+ 441 0088 00C0      		rjmp .L18
+ 101:ergodox_ez.c  ****     mcp23018_status = i2c_write(0b00111111);        if (mcp23018_status) goto out;
+ 442               		.loc 1 101 0
+ 443 008a 8FE3      		ldi r24,lo8(63)
+ 444 008c 0E94 0000 		call i2c_write
+ 445               	.LVL22:
+ 446 0090 8093 0000 		sts mcp23018_status,r24
+ 447               	.L18:
+ 102:ergodox_ez.c  **** 
+ 103:ergodox_ez.c  **** out:
+ 104:ergodox_ez.c  ****     i2c_stop();
+ 448               		.loc 1 104 0
+ 449 0094 0E94 0000 		call i2c_stop
+ 450               	.LVL23:
+ 105:ergodox_ez.c  **** 
+ 106:ergodox_ez.c  ****     return mcp23018_status;
+ 107:ergodox_ez.c  **** }
+ 451               		.loc 1 107 0
+ 452 0098 8091 0000 		lds r24,mcp23018_status
+ 453 009c 0895      		ret
+ 454               		.cfi_endproc
+ 455               	.LFE125:
+ 457               	.global	mcp23018_status
+ 458               		.section	.data.mcp23018_status,"aw",@progbits
+ 461               	mcp23018_status:
+ 462 0000 20        		.byte	32
+ 463               	.global	i2c_initialized
+ 464               		.section	.bss.i2c_initialized,"aw",@nobits
+ 467               	i2c_initialized:
+ 468 0000 00        		.zero	1
+ 469               		.comm	keymap_config,2,1
+ 470               		.text
+ 471               	.Letext0:
+ 472               		.file 4 "/usr/local/CrossPack-AVR-20131216/avr/include/stdint.h"
+ 473               		.file 5 "../../quantum/keymap_common.h"
+ 474               		.file 6 "../../tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/USBTask.h"
+ 475               		.file 7 "i2cmaster.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 ergodox_ez.c
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:2      *ABS*:0000003e __SP_H__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:3      *ABS*:0000003d __SP_L__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:4      *ABS*:0000003f __SREG__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:13     .text.matrix_init_user:00000000 matrix_init_user
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:32     .text.matrix_scan_user:00000000 matrix_scan_user
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:50     .text.matrix_scan_kb:00000000 matrix_scan_kb
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:77     .text.ergodox_blink_all_leds:00000000 ergodox_blink_all_leds
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:299    .text.matrix_init_kb:00000000 matrix_init_kb
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:355    .text.init_mcp23018:00000000 init_mcp23018
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:461    .data.mcp23018_status:00000000 mcp23018_status
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//cc4aqUV3.s:467    .bss.i2c_initialized:00000000 i2c_initialized
+                            *COM*:00000002 keymap_config
+
+UNDEFINED SYMBOLS
+i2c_init
+i2c_start
+i2c_write
+i2c_stop
+__do_copy_data
+__do_clear_bss

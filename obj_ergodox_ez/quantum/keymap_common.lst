@@ -1,0 +1,1528 @@
+   1               		.file	"keymap_common.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.text.keycode_to_action,"ax",@progbits
+  12               	keycode_to_action:
+  13               	.LFB106:
+  14               		.file 1 "../../quantum/keymap_common.c"
+   1:../../quantum/keymap_common.c **** /*
+   2:../../quantum/keymap_common.c **** Copyright 2012,2013 Jun Wako <wakojun@gmail.com>
+   3:../../quantum/keymap_common.c **** 
+   4:../../quantum/keymap_common.c **** This program is free software: you can redistribute it and/or modify
+   5:../../quantum/keymap_common.c **** it under the terms of the GNU General Public License as published by
+   6:../../quantum/keymap_common.c **** the Free Software Foundation, either version 2 of the License, or
+   7:../../quantum/keymap_common.c **** (at your option) any later version.
+   8:../../quantum/keymap_common.c **** 
+   9:../../quantum/keymap_common.c **** This program is distributed in the hope that it will be useful,
+  10:../../quantum/keymap_common.c **** but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:../../quantum/keymap_common.c **** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  12:../../quantum/keymap_common.c **** GNU General Public License for more details.
+  13:../../quantum/keymap_common.c **** 
+  14:../../quantum/keymap_common.c **** You should have received a copy of the GNU General Public License
+  15:../../quantum/keymap_common.c **** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  16:../../quantum/keymap_common.c **** */
+  17:../../quantum/keymap_common.c **** 
+  18:../../quantum/keymap_common.c **** #include "keymap_common.h"
+  19:../../quantum/keymap_common.c **** #include "report.h"
+  20:../../quantum/keymap_common.c **** #include "keycode.h"
+  21:../../quantum/keymap_common.c **** #include "action_layer.h"
+  22:../../quantum/keymap_common.c **** #include <util/delay.h>
+  23:../../quantum/keymap_common.c **** #include "action.h"
+  24:../../quantum/keymap_common.c **** #include "action_macro.h"
+  25:../../quantum/keymap_common.c **** #include "debug.h"
+  26:../../quantum/keymap_common.c **** #include "backlight.h"
+  27:../../quantum/keymap_common.c **** #include "keymap_midi.h"
+  28:../../quantum/keymap_common.c **** 
+  29:../../quantum/keymap_common.c **** static action_t keycode_to_action(uint16_t keycode);
+  30:../../quantum/keymap_common.c **** 
+  31:../../quantum/keymap_common.c **** /* converts key to action */
+  32:../../quantum/keymap_common.c **** action_t action_for_key(uint8_t layer, keypos_t key)
+  33:../../quantum/keymap_common.c **** {
+  34:../../quantum/keymap_common.c **** 	// 16bit keycodes - important
+  35:../../quantum/keymap_common.c ****     uint16_t keycode = keymap_key_to_keycode(layer, key);
+  36:../../quantum/keymap_common.c **** 
+  37:../../quantum/keymap_common.c ****     if (keycode >= 0x0100 && keycode < 0x2000) {
+  38:../../quantum/keymap_common.c ****     	// Has a modifier
+  39:../../quantum/keymap_common.c ****     	action_t action;
+  40:../../quantum/keymap_common.c ****     	// Split it up
+  41:../../quantum/keymap_common.c ****     	action.code = ACTION_MODS_KEY(keycode >> 8, keycode & 0xFF); // adds modifier to key
+  42:../../quantum/keymap_common.c ****     	return action;
+  43:../../quantum/keymap_common.c **** 	} else if (keycode >= 0x2000 && keycode < 0x3000) {
+  44:../../quantum/keymap_common.c ****         // Is a shortcut for function layer, pull last 12bits
+  45:../../quantum/keymap_common.c ****         // This means we have 4,096 FN macros at our disposal
+  46:../../quantum/keymap_common.c ****         return keymap_func_to_action(keycode & 0xFFF);
+  47:../../quantum/keymap_common.c **** 	} else if (keycode >= 0x3000 && keycode < 0x4000) {
+  48:../../quantum/keymap_common.c ****       // When the code starts with 3, it's an action macro.
+  49:../../quantum/keymap_common.c ****     	action_t action;
+  50:../../quantum/keymap_common.c ****     	action.code = ACTION_MACRO(keycode & 0xFF);
+  51:../../quantum/keymap_common.c ****     	return action;
+  52:../../quantum/keymap_common.c **** #ifdef BACKLIGHT_ENABLE
+  53:../../quantum/keymap_common.c **** 	} else if (keycode >= BL_0 & keycode <= BL_15) {
+  54:../../quantum/keymap_common.c ****         action_t action;
+  55:../../quantum/keymap_common.c ****         action.code = ACTION_BACKLIGHT_LEVEL(keycode & 0x000F);
+  56:../../quantum/keymap_common.c ****         return action;
+  57:../../quantum/keymap_common.c ****     } else if (keycode == BL_DEC) {
+  58:../../quantum/keymap_common.c ****         action_t action;
+  59:../../quantum/keymap_common.c ****         action.code = ACTION_BACKLIGHT_DECREASE();
+  60:../../quantum/keymap_common.c ****         return action;
+  61:../../quantum/keymap_common.c ****     } else if (keycode == BL_INC) {
+  62:../../quantum/keymap_common.c ****         action_t action;
+  63:../../quantum/keymap_common.c ****         action.code = ACTION_BACKLIGHT_INCREASE();
+  64:../../quantum/keymap_common.c ****         return action;
+  65:../../quantum/keymap_common.c ****     } else if (keycode == BL_TOGG) {
+  66:../../quantum/keymap_common.c ****         action_t action;
+  67:../../quantum/keymap_common.c ****         action.code = ACTION_BACKLIGHT_TOGGLE();
+  68:../../quantum/keymap_common.c ****         return action;
+  69:../../quantum/keymap_common.c ****     } else if (keycode == BL_STEP) {
+  70:../../quantum/keymap_common.c ****         action_t action;
+  71:../../quantum/keymap_common.c ****         action.code = ACTION_BACKLIGHT_STEP();
+  72:../../quantum/keymap_common.c ****         return action;
+  73:../../quantum/keymap_common.c **** #endif
+  74:../../quantum/keymap_common.c ****     } else if (keycode == RESET) { // RESET is 0x5000, which is why this is here
+  75:../../quantum/keymap_common.c ****         clear_keyboard();
+  76:../../quantum/keymap_common.c ****         _delay_ms(250);
+  77:../../quantum/keymap_common.c ****         bootloader_jump();
+  78:../../quantum/keymap_common.c ****         return;
+  79:../../quantum/keymap_common.c ****     } else if (keycode == DEBUG) { // DEBUG is 0x5001
+  80:../../quantum/keymap_common.c ****       // TODO: Does this actually work?
+  81:../../quantum/keymap_common.c ****         print("\nDEBUG: enabled.\n");
+  82:../../quantum/keymap_common.c ****         debug_enable = true;
+  83:../../quantum/keymap_common.c ****         return;
+  84:../../quantum/keymap_common.c ****     } else if (keycode >= 0x5000 && keycode < 0x6000) {
+  85:../../quantum/keymap_common.c ****         // Layer movement shortcuts
+  86:../../quantum/keymap_common.c ****         // See .h to see constraints/usage
+  87:../../quantum/keymap_common.c ****         int type = (keycode >> 0x8) & 0xF;
+  88:../../quantum/keymap_common.c ****         if (type == 0x1) {
+  89:../../quantum/keymap_common.c ****             // Layer set "GOTO"
+  90:../../quantum/keymap_common.c ****             int when = (keycode >> 0x4) & 0x3;
+  91:../../quantum/keymap_common.c ****             int layer = keycode & 0xF;
+  92:../../quantum/keymap_common.c ****             action_t action;
+  93:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_SET(layer, when);
+  94:../../quantum/keymap_common.c ****             return action;
+  95:../../quantum/keymap_common.c ****         } else if (type == 0x2) {
+  96:../../quantum/keymap_common.c ****             // Momentary layer
+  97:../../quantum/keymap_common.c ****             int layer = keycode & 0xFF;
+  98:../../quantum/keymap_common.c ****             action_t action;
+  99:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_MOMENTARY(layer);
+ 100:../../quantum/keymap_common.c ****             return action;
+ 101:../../quantum/keymap_common.c ****         } else if (type == 0x3) {
+ 102:../../quantum/keymap_common.c ****             // Set default layer
+ 103:../../quantum/keymap_common.c ****             int layer = keycode & 0xFF;
+ 104:../../quantum/keymap_common.c ****             action_t action;
+ 105:../../quantum/keymap_common.c ****             action.code = ACTION_DEFAULT_LAYER_SET(layer);
+ 106:../../quantum/keymap_common.c ****             return action;
+ 107:../../quantum/keymap_common.c ****         } else if (type == 0x4) {
+ 108:../../quantum/keymap_common.c ****             // Set default layer
+ 109:../../quantum/keymap_common.c ****             int layer = keycode & 0xFF;
+ 110:../../quantum/keymap_common.c ****             action_t action;
+ 111:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_TOGGLE(layer);
+ 112:../../quantum/keymap_common.c ****             return action;
+ 113:../../quantum/keymap_common.c ****         }
+ 114:../../quantum/keymap_common.c **** #ifdef MIDI_ENABLE
+ 115:../../quantum/keymap_common.c ****     } else if (keycode >= 0x6000 && keycode < 0x7000) {
+ 116:../../quantum/keymap_common.c ****         action_t action;
+ 117:../../quantum/keymap_common.c ****         action.code =  ACTION_FUNCTION_OPT(keycode & 0xFF, (keycode & 0x0F00) >> 8);
+ 118:../../quantum/keymap_common.c ****         return action;
+ 119:../../quantum/keymap_common.c **** #endif
+ 120:../../quantum/keymap_common.c ****     } else if (keycode >= 0x7000 && keycode < 0x8000) {
+ 121:../../quantum/keymap_common.c ****         action_t action;
+ 122:../../quantum/keymap_common.c ****         action.code = ACTION_MODS_TAP_KEY((keycode >> 0x8) & 0xF, keycode & 0xFF);
+ 123:../../quantum/keymap_common.c ****         return action;
+ 124:../../quantum/keymap_common.c ****     } else if (keycode >= 0x8000 && keycode < 0x9000) {
+ 125:../../quantum/keymap_common.c ****         action_t action;
+ 126:../../quantum/keymap_common.c ****         action.code = ACTION_LAYER_TAP_KEY((keycode >> 0x8) & 0xF, keycode & 0xFF);
+ 127:../../quantum/keymap_common.c ****         return action;
+ 128:../../quantum/keymap_common.c **** #ifdef UNICODE_ENABLE
+ 129:../../quantum/keymap_common.c ****     } else if (keycode >= 0x8000000) {
+ 130:../../quantum/keymap_common.c ****         action_t action;
+ 131:../../quantum/keymap_common.c ****         uint16_t unicode = keycode & ~(0x8000);
+ 132:../../quantum/keymap_common.c ****         action.code =  ACTION_FUNCTION_OPT(unicode & 0xFF, (unicode & 0xFF00) >> 8);
+ 133:../../quantum/keymap_common.c ****         return action;
+ 134:../../quantum/keymap_common.c **** #endif
+ 135:../../quantum/keymap_common.c ****     } else {
+ 136:../../quantum/keymap_common.c **** 
+ 137:../../quantum/keymap_common.c ****     }
+ 138:../../quantum/keymap_common.c **** 
+ 139:../../quantum/keymap_common.c ****     switch (keycode) {
+ 140:../../quantum/keymap_common.c ****         case KC_FN0 ... KC_FN31:
+ 141:../../quantum/keymap_common.c ****             return keymap_fn_to_action(keycode);
+ 142:../../quantum/keymap_common.c **** #ifdef BOOTMAGIC_ENABLE
+ 143:../../quantum/keymap_common.c ****         case KC_CAPSLOCK:
+ 144:../../quantum/keymap_common.c ****         case KC_LOCKING_CAPS:
+ 145:../../quantum/keymap_common.c ****             if (keymap_config.swap_control_capslock || keymap_config.capslock_to_control) {
+ 146:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_LCTL);
+ 147:../../quantum/keymap_common.c ****             }
+ 148:../../quantum/keymap_common.c ****             return keycode_to_action(keycode);
+ 149:../../quantum/keymap_common.c ****         case KC_LCTL:
+ 150:../../quantum/keymap_common.c ****             if (keymap_config.swap_control_capslock) {
+ 151:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_CAPSLOCK);
+ 152:../../quantum/keymap_common.c ****             }
+ 153:../../quantum/keymap_common.c ****             return keycode_to_action(KC_LCTL);
+ 154:../../quantum/keymap_common.c ****         case KC_LALT:
+ 155:../../quantum/keymap_common.c ****             if (keymap_config.swap_lalt_lgui) {
+ 156:../../quantum/keymap_common.c ****                 if (keymap_config.no_gui) {
+ 157:../../quantum/keymap_common.c ****                     return keycode_to_action(ACTION_NO);
+ 158:../../quantum/keymap_common.c ****                 }
+ 159:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_LGUI);
+ 160:../../quantum/keymap_common.c ****             }
+ 161:../../quantum/keymap_common.c ****             return keycode_to_action(KC_LALT);
+ 162:../../quantum/keymap_common.c ****         case KC_LGUI:
+ 163:../../quantum/keymap_common.c ****             if (keymap_config.swap_lalt_lgui) {
+ 164:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_LALT);
+ 165:../../quantum/keymap_common.c ****             }
+ 166:../../quantum/keymap_common.c ****             if (keymap_config.no_gui) {
+ 167:../../quantum/keymap_common.c ****                 return keycode_to_action(ACTION_NO);
+ 168:../../quantum/keymap_common.c ****             }
+ 169:../../quantum/keymap_common.c ****             return keycode_to_action(KC_LGUI);
+ 170:../../quantum/keymap_common.c ****         case KC_RALT:
+ 171:../../quantum/keymap_common.c ****             if (keymap_config.swap_ralt_rgui) {
+ 172:../../quantum/keymap_common.c ****                 if (keymap_config.no_gui) {
+ 173:../../quantum/keymap_common.c ****                     return keycode_to_action(ACTION_NO);
+ 174:../../quantum/keymap_common.c ****                 }
+ 175:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_RGUI);
+ 176:../../quantum/keymap_common.c ****             }
+ 177:../../quantum/keymap_common.c ****             return keycode_to_action(KC_RALT);
+ 178:../../quantum/keymap_common.c ****         case KC_RGUI:
+ 179:../../quantum/keymap_common.c ****             if (keymap_config.swap_ralt_rgui) {
+ 180:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_RALT);
+ 181:../../quantum/keymap_common.c ****             }
+ 182:../../quantum/keymap_common.c ****             if (keymap_config.no_gui) {
+ 183:../../quantum/keymap_common.c ****                 return keycode_to_action(ACTION_NO);
+ 184:../../quantum/keymap_common.c ****             }
+ 185:../../quantum/keymap_common.c ****             return keycode_to_action(KC_RGUI);
+ 186:../../quantum/keymap_common.c ****         case KC_GRAVE:
+ 187:../../quantum/keymap_common.c ****             if (keymap_config.swap_grave_esc) {
+ 188:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_ESC);
+ 189:../../quantum/keymap_common.c ****             }
+ 190:../../quantum/keymap_common.c ****             return keycode_to_action(KC_GRAVE);
+ 191:../../quantum/keymap_common.c ****         case KC_ESC:
+ 192:../../quantum/keymap_common.c ****             if (keymap_config.swap_grave_esc) {
+ 193:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_GRAVE);
+ 194:../../quantum/keymap_common.c ****             }
+ 195:../../quantum/keymap_common.c ****             return keycode_to_action(KC_ESC);
+ 196:../../quantum/keymap_common.c ****         case KC_BSLASH:
+ 197:../../quantum/keymap_common.c ****             if (keymap_config.swap_backslash_backspace) {
+ 198:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_BSPACE);
+ 199:../../quantum/keymap_common.c ****             }
+ 200:../../quantum/keymap_common.c ****             return keycode_to_action(KC_BSLASH);
+ 201:../../quantum/keymap_common.c ****         case KC_BSPACE:
+ 202:../../quantum/keymap_common.c ****             if (keymap_config.swap_backslash_backspace) {
+ 203:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_BSLASH);
+ 204:../../quantum/keymap_common.c ****             }
+ 205:../../quantum/keymap_common.c ****             return keycode_to_action(KC_BSPACE);
+ 206:../../quantum/keymap_common.c **** #endif
+ 207:../../quantum/keymap_common.c ****         default:
+ 208:../../quantum/keymap_common.c ****             return keycode_to_action(keycode);
+ 209:../../quantum/keymap_common.c ****     }
+ 210:../../quantum/keymap_common.c **** }
+ 211:../../quantum/keymap_common.c **** 
+ 212:../../quantum/keymap_common.c **** 
+ 213:../../quantum/keymap_common.c **** /* Macro */
+ 214:../../quantum/keymap_common.c **** __attribute__ ((weak))
+ 215:../../quantum/keymap_common.c **** const macro_t *action_get_macro(keyrecord_t *record, uint8_t id, uint8_t opt)
+ 216:../../quantum/keymap_common.c **** {
+ 217:../../quantum/keymap_common.c ****     return MACRO_NONE;
+ 218:../../quantum/keymap_common.c **** }
+ 219:../../quantum/keymap_common.c **** 
+ 220:../../quantum/keymap_common.c **** /* Function */
+ 221:../../quantum/keymap_common.c **** __attribute__ ((weak))
+ 222:../../quantum/keymap_common.c **** void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
+ 223:../../quantum/keymap_common.c **** {
+ 224:../../quantum/keymap_common.c **** }
+ 225:../../quantum/keymap_common.c **** 
+ 226:../../quantum/keymap_common.c **** /* translates keycode to action */
+ 227:../../quantum/keymap_common.c **** static action_t keycode_to_action(uint16_t keycode)
+ 228:../../quantum/keymap_common.c **** {
+  15               		.loc 1 228 0
+  16               		.cfi_startproc
+  17               	.LVL0:
+  18               	/* prologue: function */
+  19               	/* frame size = 0 */
+  20               	/* stack size = 0 */
+  21               	.L__stack_usage = 0
+ 229:../../quantum/keymap_common.c ****     action_t action;
+ 230:../../quantum/keymap_common.c ****     switch (keycode) {
+  22               		.loc 1 230 0
+  23 0000 8B3B      		cpi r24,-69
+  24 0002 9105      		cpc r25,__zero_reg__
+  25 0004 00F4      		brsh .L3
+  26 0006 883A      		cpi r24,-88
+  27 0008 9105      		cpc r25,__zero_reg__
+  28 000a 00F4      		brsh .L4
+  29 000c 853A      		cpi r24,-91
+  30 000e 9105      		cpc r25,__zero_reg__
+  31 0010 00F4      		brsh .L5
+  32 0012 8430      		cpi r24,4
+  33 0014 9105      		cpc r25,__zero_reg__
+  34 0016 00F0      		brlo .+2
+  35 0018 00C0      		rjmp .L6
+  36 001a 8130      		cpi r24,1
+  37 001c 9105      		cpc r25,__zero_reg__
+  38 001e 01F4      		brne .+2
+  39 0020 00C0      		rjmp .L6
+  40 0022 00C0      		rjmp .L2
+  41               	.L3:
+  42 0024 803E      		cpi r24,-32
+  43 0026 9105      		cpc r25,__zero_reg__
+  44 0028 00F4      		brsh .+2
+  45 002a 00C0      		rjmp .L2
+  46 002c 883E      		cpi r24,-24
+  47 002e 9105      		cpc r25,__zero_reg__
+  48 0030 00F4      		brsh .+2
+  49 0032 00C0      		rjmp .L6
+  50 0034 9C01      		movw r18,r24
+  51 0036 205F      		subi r18,-16
+  52 0038 3109      		sbc r19,__zero_reg__
+  53 003a 2031      		cpi r18,16
+  54 003c 3105      		cpc r19,__zero_reg__
+  55 003e 00F0      		brlo .+2
+  56 0040 00C0      		rjmp .L2
+ 231:../../quantum/keymap_common.c ****         case KC_A ... KC_EXSEL:
+ 232:../../quantum/keymap_common.c ****         case KC_LCTRL ... KC_RGUI:
+ 233:../../quantum/keymap_common.c ****             action.code = ACTION_KEY(keycode);
+ 234:../../quantum/keymap_common.c ****             break;
+ 235:../../quantum/keymap_common.c ****         case KC_SYSTEM_POWER ... KC_SYSTEM_WAKE:
+ 236:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_SYSTEM(KEYCODE2SYSTEM(keycode));
+ 237:../../quantum/keymap_common.c ****             break;
+ 238:../../quantum/keymap_common.c ****         case KC_AUDIO_MUTE ... KC_WWW_FAVORITES:
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 240:../../quantum/keymap_common.c ****             break;
+ 241:../../quantum/keymap_common.c ****         case KC_MS_UP ... KC_MS_ACCEL2:
+ 242:../../quantum/keymap_common.c ****             action.code = ACTION_MOUSEKEY(keycode);
+  57               		.loc 1 242 0
+  58 0042 9065      		ori r25,80
+  59               	.LVL1:
+ 243:../../quantum/keymap_common.c ****             break;
+  60               		.loc 1 243 0
+  61 0044 0895      		ret
+  62               	.LVL2:
+  63               	.L5:
+ 236:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_SYSTEM(KEYCODE2SYSTEM(keycode));
+  64               		.loc 1 236 0
+  65 0046 853A      		cpi r24,-91
+  66 0048 9105      		cpc r25,__zero_reg__
+  67 004a 01F4      		brne .+2
+  68 004c 00C0      		rjmp .L8
+ 236:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_SYSTEM(KEYCODE2SYSTEM(keycode));
+  69               		.loc 1 236 0 is_stmt 0 discriminator 1
+  70 004e 863A      		cpi r24,-90
+  71 0050 9105      		cpc r25,__zero_reg__
+  72 0052 01F4      		brne .+2
+  73 0054 00C0      		rjmp .L9
+ 236:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_SYSTEM(KEYCODE2SYSTEM(keycode));
+  74               		.loc 1 236 0
+  75 0056 83E8      		ldi r24,lo8(-125)
+  76 0058 90E4      		ldi r25,lo8(64)
+  77               	.LVL3:
+  78 005a 0895      		ret
+  79               	.LVL4:
+  80               	.L4:
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+  81               		.loc 1 239 0 is_stmt 1
+  82 005c 883A      		cpi r24,-88
+  83 005e 9105      		cpc r25,__zero_reg__
+  84 0060 01F4      		brne .+2
+  85 0062 00C0      		rjmp .L10
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+  86               		.loc 1 239 0 is_stmt 0 discriminator 1
+  87 0064 893A      		cpi r24,-87
+  88 0066 9105      		cpc r25,__zero_reg__
+  89 0068 01F4      		brne .+2
+  90 006a 00C0      		rjmp .L11
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+  91               		.loc 1 239 0 discriminator 3
+  92 006c 8A3A      		cpi r24,-86
+  93 006e 9105      		cpc r25,__zero_reg__
+  94 0070 01F4      		brne .+2
+  95 0072 00C0      		rjmp .L12
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+  96               		.loc 1 239 0 discriminator 5
+  97 0074 8B3A      		cpi r24,-85
+  98 0076 9105      		cpc r25,__zero_reg__
+  99 0078 01F4      		brne .+2
+ 100 007a 00C0      		rjmp .L13
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 101               		.loc 1 239 0 discriminator 7
+ 102 007c 8C3A      		cpi r24,-84
+ 103 007e 9105      		cpc r25,__zero_reg__
+ 104 0080 01F4      		brne .+2
+ 105 0082 00C0      		rjmp .L14
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 106               		.loc 1 239 0 discriminator 13
+ 107 0084 8D3A      		cpi r24,-83
+ 108 0086 9105      		cpc r25,__zero_reg__
+ 109 0088 01F4      		brne .+2
+ 110 008a 00C0      		rjmp .L15
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 111               		.loc 1 239 0 discriminator 15
+ 112 008c 803B      		cpi r24,-80
+ 113 008e 9105      		cpc r25,__zero_reg__
+ 114 0090 01F4      		brne .+2
+ 115 0092 00C0      		rjmp .L16
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 116               		.loc 1 239 0 discriminator 17
+ 117 0094 8E3A      		cpi r24,-82
+ 118 0096 9105      		cpc r25,__zero_reg__
+ 119 0098 01F4      		brne .+2
+ 120 009a 00C0      		rjmp .L17
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 121               		.loc 1 239 0 discriminator 19
+ 122 009c 8F3A      		cpi r24,-81
+ 123 009e 9105      		cpc r25,__zero_reg__
+ 124 00a0 01F4      		brne .+2
+ 125 00a2 00C0      		rjmp .L18
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 126               		.loc 1 239 0 discriminator 21
+ 127 00a4 813B      		cpi r24,-79
+ 128 00a6 9105      		cpc r25,__zero_reg__
+ 129 00a8 01F4      		brne .+2
+ 130 00aa 00C0      		rjmp .L19
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 131               		.loc 1 239 0 discriminator 23
+ 132 00ac 823B      		cpi r24,-78
+ 133 00ae 9105      		cpc r25,__zero_reg__
+ 134 00b0 01F4      		brne .+2
+ 135 00b2 00C0      		rjmp .L20
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 136               		.loc 1 239 0 discriminator 25
+ 137 00b4 833B      		cpi r24,-77
+ 138 00b6 9105      		cpc r25,__zero_reg__
+ 139 00b8 01F4      		brne .+2
+ 140 00ba 00C0      		rjmp .L21
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 141               		.loc 1 239 0 discriminator 27
+ 142 00bc 843B      		cpi r24,-76
+ 143 00be 9105      		cpc r25,__zero_reg__
+ 144 00c0 01F4      		brne .+2
+ 145 00c2 00C0      		rjmp .L22
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 146               		.loc 1 239 0 discriminator 29
+ 147 00c4 853B      		cpi r24,-75
+ 148 00c6 9105      		cpc r25,__zero_reg__
+ 149 00c8 01F4      		brne .+2
+ 150 00ca 00C0      		rjmp .L23
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 151               		.loc 1 239 0 discriminator 31
+ 152 00cc 863B      		cpi r24,-74
+ 153 00ce 9105      		cpc r25,__zero_reg__
+ 154 00d0 01F4      		brne .+2
+ 155 00d2 00C0      		rjmp .L24
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 156               		.loc 1 239 0 discriminator 33
+ 157 00d4 873B      		cpi r24,-73
+ 158 00d6 9105      		cpc r25,__zero_reg__
+ 159 00d8 01F4      		brne .+2
+ 160 00da 00C0      		rjmp .L25
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 161               		.loc 1 239 0 discriminator 35
+ 162 00dc 883B      		cpi r24,-72
+ 163 00de 9105      		cpc r25,__zero_reg__
+ 164 00e0 01F4      		brne .+2
+ 165 00e2 00C0      		rjmp .L26
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 166               		.loc 1 239 0 discriminator 37
+ 167 00e4 893B      		cpi r24,-71
+ 168 00e6 9105      		cpc r25,__zero_reg__
+ 169 00e8 01F4      		brne .+2
+ 170 00ea 00C0      		rjmp .L27
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 171               		.loc 1 239 0 discriminator 39
+ 172 00ec 8A3B      		cpi r24,-70
+ 173 00ee 9105      		cpc r25,__zero_reg__
+ 174 00f0 01F0      		breq .+2
+ 175 00f2 00C0      		rjmp .L28
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 176               		.loc 1 239 0
+ 177 00f4 8AE2      		ldi r24,lo8(42)
+ 178 00f6 96E4      		ldi r25,lo8(70)
+ 179               	.LVL5:
+ 180 00f8 0895      		ret
+ 181               	.LVL6:
+ 182               	.L2:
+ 244:../../quantum/keymap_common.c ****         case KC_TRNS:
+ 245:../../quantum/keymap_common.c ****             action.code = ACTION_TRANSPARENT;
+ 246:../../quantum/keymap_common.c ****             break;
+ 247:../../quantum/keymap_common.c ****         default:
+ 248:../../quantum/keymap_common.c ****             action.code = ACTION_NO;
+ 183               		.loc 1 248 0 is_stmt 1
+ 184 00fa 80E0      		ldi r24,0
+ 185 00fc 90E0      		ldi r25,0
+ 186               	.LVL7:
+ 249:../../quantum/keymap_common.c ****             break;
+ 187               		.loc 1 249 0
+ 188 00fe 0895      		ret
+ 189               	.LVL8:
+ 190               	.L8:
+ 236:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_SYSTEM(KEYCODE2SYSTEM(keycode));
+ 191               		.loc 1 236 0
+ 192 0100 81E8      		ldi r24,lo8(-127)
+ 193 0102 90E4      		ldi r25,lo8(64)
+ 194               	.LVL9:
+ 195 0104 0895      		ret
+ 196               	.LVL10:
+ 197               	.L9:
+ 198 0106 82E8      		ldi r24,lo8(-126)
+ 199 0108 90E4      		ldi r25,lo8(64)
+ 200               	.LVL11:
+ 201 010a 0895      		ret
+ 202               	.LVL12:
+ 203               	.L10:
+ 239:../../quantum/keymap_common.c ****             action.code = ACTION_USAGE_CONSUMER(KEYCODE2CONSUMER(keycode));
+ 204               		.loc 1 239 0
+ 205 010c 82EE      		ldi r24,lo8(-30)
+ 206 010e 94E4      		ldi r25,lo8(68)
+ 207               	.LVL13:
+ 208 0110 0895      		ret
+ 209               	.LVL14:
+ 210               	.L11:
+ 211 0112 89EE      		ldi r24,lo8(-23)
+ 212 0114 94E4      		ldi r25,lo8(68)
+ 213               	.LVL15:
+ 214 0116 0895      		ret
+ 215               	.LVL16:
+ 216               	.L12:
+ 217 0118 8AEE      		ldi r24,lo8(-22)
+ 218 011a 94E4      		ldi r25,lo8(68)
+ 219               	.LVL17:
+ 220 011c 0895      		ret
+ 221               	.LVL18:
+ 222               	.L13:
+ 223 011e 85EB      		ldi r24,lo8(-75)
+ 224 0120 94E4      		ldi r25,lo8(68)
+ 225               	.LVL19:
+ 226 0122 0895      		ret
+ 227               	.LVL20:
+ 228               	.L14:
+ 229 0124 86EB      		ldi r24,lo8(-74)
+ 230 0126 94E4      		ldi r25,lo8(68)
+ 231               	.LVL21:
+ 232 0128 0895      		ret
+ 233               	.LVL22:
+ 234               	.L15:
+ 235 012a 87EB      		ldi r24,lo8(-73)
+ 236 012c 94E4      		ldi r25,lo8(68)
+ 237               	.LVL23:
+ 238 012e 0895      		ret
+ 239               	.LVL24:
+ 240               	.L16:
+ 241 0130 8CEC      		ldi r24,lo8(-52)
+ 242 0132 94E4      		ldi r25,lo8(68)
+ 243               	.LVL25:
+ 244 0134 0895      		ret
+ 245               	.LVL26:
+ 246               	.L17:
+ 247 0136 8DEC      		ldi r24,lo8(-51)
+ 248 0138 94E4      		ldi r25,lo8(68)
+ 249               	.LVL27:
+ 250 013a 0895      		ret
+ 251               	.LVL28:
+ 252               	.L18:
+ 253 013c 83E8      		ldi r24,lo8(-125)
+ 254 013e 95E4      		ldi r25,lo8(69)
+ 255               	.LVL29:
+ 256 0140 0895      		ret
+ 257               	.LVL30:
+ 258               	.L19:
+ 259 0142 8AE8      		ldi r24,lo8(-118)
+ 260 0144 95E4      		ldi r25,lo8(69)
+ 261               	.LVL31:
+ 262 0146 0895      		ret
+ 263               	.LVL32:
+ 264               	.L20:
+ 265 0148 82E9      		ldi r24,lo8(-110)
+ 266 014a 95E4      		ldi r25,lo8(69)
+ 267               	.LVL33:
+ 268 014c 0895      		ret
+ 269               	.LVL34:
+ 270               	.L21:
+ 271 014e 84E9      		ldi r24,lo8(-108)
+ 272 0150 95E4      		ldi r25,lo8(69)
+ 273               	.LVL35:
+ 274 0152 0895      		ret
+ 275               	.LVL36:
+ 276               	.L22:
+ 277 0154 81E2      		ldi r24,lo8(33)
+ 278 0156 96E4      		ldi r25,lo8(70)
+ 279               	.LVL37:
+ 280 0158 0895      		ret
+ 281               	.LVL38:
+ 282               	.L23:
+ 283 015a 83E2      		ldi r24,lo8(35)
+ 284 015c 96E4      		ldi r25,lo8(70)
+ 285               	.LVL39:
+ 286 015e 0895      		ret
+ 287               	.LVL40:
+ 288               	.L24:
+ 289 0160 84E2      		ldi r24,lo8(36)
+ 290 0162 96E4      		ldi r25,lo8(70)
+ 291               	.LVL41:
+ 292 0164 0895      		ret
+ 293               	.LVL42:
+ 294               	.L25:
+ 295 0166 85E2      		ldi r24,lo8(37)
+ 296 0168 96E4      		ldi r25,lo8(70)
+ 297               	.LVL43:
+ 298 016a 0895      		ret
+ 299               	.LVL44:
+ 300               	.L26:
+ 301 016c 86E2      		ldi r24,lo8(38)
+ 302 016e 96E4      		ldi r25,lo8(70)
+ 303               	.LVL45:
+ 304 0170 0895      		ret
+ 305               	.LVL46:
+ 306               	.L27:
+ 307 0172 87E2      		ldi r24,lo8(39)
+ 308 0174 96E4      		ldi r25,lo8(70)
+ 309               	.LVL47:
+ 310 0176 0895      		ret
+ 311               	.LVL48:
+ 312               	.L28:
+ 313 0178 80E0      		ldi r24,0
+ 314 017a 94E4      		ldi r25,lo8(68)
+ 315               	.LVL49:
+ 316               	.L6:
+ 250:../../quantum/keymap_common.c ****     }
+ 251:../../quantum/keymap_common.c ****     return action;
+ 252:../../quantum/keymap_common.c **** }
+ 317               		.loc 1 252 0
+ 318 017c 0895      		ret
+ 319               		.cfi_endproc
+ 320               	.LFE106:
+ 322               		.section	.text.action_get_macro,"ax",@progbits
+ 323               		.weak	action_get_macro
+ 325               	action_get_macro:
+ 326               	.LFB104:
+ 216:../../quantum/keymap_common.c **** {
+ 327               		.loc 1 216 0
+ 328               		.cfi_startproc
+ 329               	.LVL50:
+ 330               	/* prologue: function */
+ 331               	/* frame size = 0 */
+ 332               	/* stack size = 0 */
+ 333               	.L__stack_usage = 0
+ 218:../../quantum/keymap_common.c **** }
+ 334               		.loc 1 218 0
+ 335 0000 80E0      		ldi r24,0
+ 336 0002 90E0      		ldi r25,0
+ 337               	.LVL51:
+ 338 0004 0895      		ret
+ 339               		.cfi_endproc
+ 340               	.LFE104:
+ 342               		.section	.text.action_function,"ax",@progbits
+ 343               		.weak	action_function
+ 345               	action_function:
+ 346               	.LFB105:
+ 223:../../quantum/keymap_common.c **** {
+ 347               		.loc 1 223 0
+ 348               		.cfi_startproc
+ 349               	.LVL52:
+ 350               	/* prologue: function */
+ 351               	/* frame size = 0 */
+ 352               	/* stack size = 0 */
+ 353               	.L__stack_usage = 0
+ 354 0000 0895      		ret
+ 355               		.cfi_endproc
+ 356               	.LFE105:
+ 358               		.section	.text.keymap_key_to_keycode,"ax",@progbits
+ 359               	.global	keymap_key_to_keycode
+ 361               	keymap_key_to_keycode:
+ 362               	.LFB107:
+ 253:../../quantum/keymap_common.c **** 
+ 254:../../quantum/keymap_common.c **** 
+ 255:../../quantum/keymap_common.c **** /* translates key to keycode */
+ 256:../../quantum/keymap_common.c **** uint16_t keymap_key_to_keycode(uint8_t layer, keypos_t key)
+ 257:../../quantum/keymap_common.c **** {
+ 363               		.loc 1 257 0
+ 364               		.cfi_startproc
+ 365               	.LVL53:
+ 366               	/* prologue: function */
+ 367               	/* frame size = 0 */
+ 368               	/* stack size = 0 */
+ 369               	.L__stack_usage = 0
+ 370               	.LBB16:
+ 258:../../quantum/keymap_common.c **** 	// Read entire word (16bits)
+ 259:../../quantum/keymap_common.c ****     return pgm_read_word(&keymaps[(layer)][(key.row)][(key.col)]);
+ 371               		.loc 1 259 0
+ 372 0000 96E0      		ldi r25,lo8(6)
+ 373 0002 799F      		mul r23,r25
+ 374 0004 F001      		movw r30,r0
+ 375 0006 1124      		clr __zero_reg__
+ 376 0008 94E5      		ldi r25,lo8(84)
+ 377 000a 899F      		mul r24,r25
+ 378 000c E00D      		add r30,r0
+ 379 000e F11D      		adc r31,r1
+ 380 0010 1124      		clr __zero_reg__
+ 381 0012 E60F      		add r30,r22
+ 382 0014 F11D      		adc r31,__zero_reg__
+ 383 0016 EE0F      		lsl r30
+ 384 0018 FF1F      		rol r31
+ 385               	.LVL54:
+ 386 001a E050      		subi r30,lo8(-(keymaps))
+ 387 001c F040      		sbci r31,hi8(-(keymaps))
+ 388               	.LVL55:
+ 389               	.LBE16:
+ 260:../../quantum/keymap_common.c **** }
+ 390               		.loc 1 260 0
+ 391               	/* #APP */
+ 392               	 ;  259 "../../quantum/keymap_common.c" 1
+ 393 001e 8591      		lpm r24, Z+
+ 394 0020 9491      		lpm r25, Z
+ 395               		
+ 396               	 ;  0 "" 2
+ 397               	/* #NOAPP */
+ 398 0022 0895      		ret
+ 399               		.cfi_endproc
+ 400               	.LFE107:
+ 402               		.section	.text.keymap_fn_to_action,"ax",@progbits
+ 403               	.global	keymap_fn_to_action
+ 405               	keymap_fn_to_action:
+ 406               	.LFB108:
+ 261:../../quantum/keymap_common.c **** 
+ 262:../../quantum/keymap_common.c **** /* translates Fn keycode to action */
+ 263:../../quantum/keymap_common.c **** action_t keymap_fn_to_action(uint16_t keycode)
+ 264:../../quantum/keymap_common.c **** {
+ 407               		.loc 1 264 0
+ 408               		.cfi_startproc
+ 409               	.LVL56:
+ 410               	/* prologue: function */
+ 411               	/* frame size = 0 */
+ 412               	/* stack size = 0 */
+ 413               	.L__stack_usage = 0
+ 414               	.LBB17:
+ 265:../../quantum/keymap_common.c ****     return (action_t){ .code = pgm_read_word(&fn_actions[FN_INDEX(keycode)]) };
+ 415               		.loc 1 265 0
+ 416 0000 880F      		lsl r24
+ 417 0002 991F      		rol r25
+ 418               	.LVL57:
+ 419 0004 8050      		subi r24,lo8(-(fn_actions-384))
+ 420 0006 9040      		sbci r25,hi8(-(fn_actions-384))
+ 421               	.LVL58:
+ 422               	.LBE17:
+ 266:../../quantum/keymap_common.c **** }
+ 423               		.loc 1 266 0
+ 424 0008 FC01      		movw r30,r24
+ 425               	/* #APP */
+ 426               	 ;  265 "../../quantum/keymap_common.c" 1
+ 427 000a 8591      		lpm r24, Z+
+ 428 000c 9491      		lpm r25, Z
+ 429               		
+ 430               	 ;  0 "" 2
+ 431               	/* #NOAPP */
+ 432 000e 0895      		ret
+ 433               		.cfi_endproc
+ 434               	.LFE108:
+ 436               		.section	.text.keymap_func_to_action,"ax",@progbits
+ 437               	.global	keymap_func_to_action
+ 439               	keymap_func_to_action:
+ 440               	.LFB109:
+ 267:../../quantum/keymap_common.c **** 
+ 268:../../quantum/keymap_common.c **** action_t keymap_func_to_action(uint16_t keycode)
+ 269:../../quantum/keymap_common.c **** {
+ 441               		.loc 1 269 0
+ 442               		.cfi_startproc
+ 443               	.LVL59:
+ 444               	/* prologue: function */
+ 445               	/* frame size = 0 */
+ 446               	/* stack size = 0 */
+ 447               	.L__stack_usage = 0
+ 448               	.LBB18:
+ 270:../../quantum/keymap_common.c **** 	// For FUNC without 8bit limit
+ 271:../../quantum/keymap_common.c ****     return (action_t){ .code = pgm_read_word(&fn_actions[(int)keycode]) };
+ 449               		.loc 1 271 0
+ 450 0000 880F      		lsl r24
+ 451 0002 991F      		rol r25
+ 452               	.LVL60:
+ 453 0004 8050      		subi r24,lo8(-(fn_actions))
+ 454 0006 9040      		sbci r25,hi8(-(fn_actions))
+ 455               	.LVL61:
+ 456               	.LBE18:
+ 272:../../quantum/keymap_common.c **** }
+ 457               		.loc 1 272 0
+ 458 0008 FC01      		movw r30,r24
+ 459               	/* #APP */
+ 460               	 ;  271 "../../quantum/keymap_common.c" 1
+ 461 000a 8591      		lpm r24, Z+
+ 462 000c 9491      		lpm r25, Z
+ 463               		
+ 464               	 ;  0 "" 2
+ 465               	/* #NOAPP */
+ 466 000e 0895      		ret
+ 467               		.cfi_endproc
+ 468               	.LFE109:
+ 470               		.section	.text.action_for_key,"ax",@progbits
+ 471               	.global	action_for_key
+ 473               	action_for_key:
+ 474               	.LFB103:
+  33:../../quantum/keymap_common.c **** {
+ 475               		.loc 1 33 0
+ 476               		.cfi_startproc
+ 477               	.LVL62:
+ 478               	/* prologue: function */
+ 479               	/* frame size = 0 */
+ 480               	/* stack size = 0 */
+ 481               	.L__stack_usage = 0
+ 482               	.LBB35:
+ 483               	.LBB36:
+ 259:../../quantum/keymap_common.c ****     return pgm_read_word(&keymaps[(layer)][(key.row)][(key.col)]);
+ 484               		.loc 1 259 0
+ 485 0000 26E0      		ldi r18,lo8(6)
+ 486 0002 729F      		mul r23,r18
+ 487 0004 F001      		movw r30,r0
+ 488 0006 1124      		clr __zero_reg__
+ 489 0008 44E5      		ldi r20,lo8(84)
+ 490 000a 849F      		mul r24,r20
+ 491 000c E00D      		add r30,r0
+ 492 000e F11D      		adc r31,r1
+ 493 0010 1124      		clr __zero_reg__
+ 494 0012 E60F      		add r30,r22
+ 495 0014 F11D      		adc r31,__zero_reg__
+ 496 0016 EE0F      		lsl r30
+ 497 0018 FF1F      		rol r31
+ 498 001a E050      		subi r30,lo8(-(keymaps))
+ 499 001c F040      		sbci r31,hi8(-(keymaps))
+ 500               	.LVL63:
+ 501               	/* #APP */
+ 502               	 ;  259 "../../quantum/keymap_common.c" 1
+ 503 001e 2591      		lpm r18, Z+
+ 504 0020 3491      		lpm r19, Z
+ 505               		
+ 506               	 ;  0 "" 2
+ 507               	.LVL64:
+ 508               	/* #NOAPP */
+ 509               	.LBE36:
+ 510               	.LBE35:
+  37:../../quantum/keymap_common.c ****     if (keycode >= 0x0100 && keycode < 0x2000) {
+ 511               		.loc 1 37 0
+ 512 0022 C901      		movw r24,r18
+ 513               	.LVL65:
+ 514 0024 9A95      		dec r25
+ 515 0026 8115      		cp r24,__zero_reg__
+ 516 0028 9F41      		sbci r25,31
+ 517 002a 00F4      		brsh .L40
+ 518               	.LVL66:
+ 519               	.LBB37:
+  42:../../quantum/keymap_common.c ****     	return action;
+ 520               		.loc 1 42 0
+ 521 002c C901      		movw r24,r18
+ 522 002e 0895      		ret
+ 523               	.LVL67:
+ 524               	.L40:
+ 525               	.LBE37:
+  43:../../quantum/keymap_common.c **** 	} else if (keycode >= 0x2000 && keycode < 0x3000) {
+ 526               		.loc 1 43 0
+ 527 0030 C901      		movw r24,r18
+ 528 0032 9052      		subi r25,32
+ 529 0034 8115      		cp r24,__zero_reg__
+ 530 0036 9041      		sbci r25,16
+ 531 0038 00F4      		brsh .L42
+  46:../../quantum/keymap_common.c ****         return keymap_func_to_action(keycode & 0xFFF);
+ 532               		.loc 1 46 0
+ 533 003a C901      		movw r24,r18
+ 534 003c 9F70      		andi r25,15
+ 535 003e 0E94 0000 		call keymap_func_to_action
+ 536               	.LVL68:
+ 537 0042 0895      		ret
+ 538               	.LVL69:
+ 539               	.L42:
+  47:../../quantum/keymap_common.c **** 	} else if (keycode >= 0x3000 && keycode < 0x4000) {
+ 540               		.loc 1 47 0
+ 541 0044 C901      		movw r24,r18
+ 542 0046 9053      		subi r25,48
+ 543 0048 8115      		cp r24,__zero_reg__
+ 544 004a 9041      		sbci r25,16
+ 545 004c 00F4      		brsh .L43
+ 546               	.LVL70:
+ 547               	.LBB38:
+  50:../../quantum/keymap_common.c ****     	action.code = ACTION_MACRO(keycode & 0xFF);
+ 548               		.loc 1 50 0
+ 549 004e C901      		movw r24,r18
+ 550 0050 9927      		clr r25
+  51:../../quantum/keymap_common.c ****     	return action;
+ 551               		.loc 1 51 0
+ 552 0052 906C      		ori r25,192
+ 553               	.LVL71:
+ 554 0054 0895      		ret
+ 555               	.LVL72:
+ 556               	.L43:
+ 557               	.LBE38:
+  74:../../quantum/keymap_common.c ****     } else if (keycode == RESET) { // RESET is 0x5000, which is why this is here
+ 558               		.loc 1 74 0
+ 559 0056 2115      		cp r18,__zero_reg__
+ 560 0058 80E5      		ldi r24,80
+ 561 005a 3807      		cpc r19,r24
+ 562 005c 01F4      		brne .L44
+ 563               	.LBB39:
+  75:../../quantum/keymap_common.c ****         clear_keyboard();
+ 564               		.loc 1 75 0
+ 565 005e 0E94 0000 		call clear_keyboard
+ 566               	.LVL73:
+ 567               	.LBB40:
+ 568               	.LBB41:
+ 569               		.file 2 "/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h"
+   1:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   6:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   9:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  12:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  17:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  21:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  33:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* $Id$ */
+  34:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  35:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  38:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  41:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  42:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  46:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \file */
+  47:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \code
+  49:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \endcode
+  53:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  54:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     used.
+  58:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  59:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  68:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  77:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  81:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** */
+  82:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  83:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  87:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  88:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  93:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  94:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  97:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  98:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+ 103:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 104:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /**
+ 105:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 107:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 109:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 112:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 114:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 120:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 125:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 129:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 132:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 140:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  */
+ 141:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** void
+ 142:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** {
+ 144:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	double __tmp ; 
+ 145:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 146:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 147:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 148:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 149:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 151:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 152:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 153:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 154:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 155:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 156:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 157:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 158:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#else
+ 159:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//round up by default
+ 160:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 161:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#endif
+ 162:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 163:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 570               		.loc 2 163 0
+ 571 0062 9FEF      		ldi r25,lo8(799999)
+ 572 0064 24E3      		ldi r18,hi8(799999)
+ 573 0066 4CE0      		ldi r20,hlo8(799999)
+ 574 0068 9150      		1: subi r25,1
+ 575 006a 2040      		sbci r18,0
+ 576 006c 4040      		sbci r20,0
+ 577 006e 01F4      		brne 1b
+ 578 0070 00C0      		rjmp .
+ 579 0072 0000      		nop
+ 580               	.LBE41:
+ 581               	.LBE40:
+  77:../../quantum/keymap_common.c ****         bootloader_jump();
+ 582               		.loc 1 77 0
+ 583 0074 0C94 0000 		jmp bootloader_jump
+ 584               	.LVL74:
+ 585               	.L44:
+ 586               	.LBE39:
+  79:../../quantum/keymap_common.c ****     } else if (keycode == DEBUG) { // DEBUG is 0x5001
+ 587               		.loc 1 79 0
+ 588 0078 2130      		cpi r18,1
+ 589 007a 80E5      		ldi r24,80
+ 590 007c 3807      		cpc r19,r24
+ 591 007e 01F4      		brne .L45
+  81:../../quantum/keymap_common.c ****         print("\nDEBUG: enabled.\n");
+ 592               		.loc 1 81 0
+ 593 0080 80E0      		ldi r24,lo8(__c.4651)
+ 594 0082 90E0      		ldi r25,hi8(__c.4651)
+ 595 0084 0E94 0000 		call xputs
+ 596               	.LVL75:
+  82:../../quantum/keymap_common.c ****         debug_enable = true;
+ 597               		.loc 1 82 0
+ 598 0088 8091 0000 		lds r24,debug_config
+ 599 008c 8160      		ori r24,lo8(1<<0)
+ 600 008e 8093 0000 		sts debug_config,r24
+ 601 0092 0895      		ret
+ 602               	.LVL76:
+ 603               	.L45:
+  84:../../quantum/keymap_common.c ****     } else if (keycode >= 0x5000 && keycode < 0x6000) {
+ 604               		.loc 1 84 0
+ 605 0094 C901      		movw r24,r18
+ 606 0096 9055      		subi r25,80
+ 607 0098 8115      		cp r24,__zero_reg__
+ 608 009a 9041      		sbci r25,16
+ 609 009c 00F0      		brlo .+2
+ 610 009e 00C0      		rjmp .L47
+ 611               	.LBB42:
+  87:../../quantum/keymap_common.c ****         int type = (keycode >> 0x8) & 0xF;
+ 612               		.loc 1 87 0
+ 613 00a0 832F      		mov r24,r19
+ 614 00a2 9927      		clr r25
+ 615 00a4 8F70      		andi r24,15
+ 616 00a6 9927      		clr r25
+ 617               	.LVL77:
+  88:../../quantum/keymap_common.c ****         if (type == 0x1) {
+ 618               		.loc 1 88 0
+ 619 00a8 8130      		cpi r24,1
+ 620 00aa 9105      		cpc r25,__zero_reg__
+ 621 00ac 01F4      		brne .L48
+ 622               	.LVL78:
+ 623               	.LBB43:
+  93:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_SET(layer, when);
+ 624               		.loc 1 93 0
+ 625 00ae A901      		movw r20,r18
+ 626 00b0 4370      		andi r20,3
+ 627 00b2 5527      		clr r21
+ 628               	.LVL79:
+ 629 00b4 00C0      		rjmp 2f
+ 630               		1:
+ 631 00b6 880F      		lsl r24
+ 632 00b8 991F      		rol r25
+ 633               		2:
+ 634 00ba 4A95      		dec r20
+ 635 00bc 02F4      		brpl 1b
+ 636               	.LVL80:
+ 637 00be 9C68      		ori r25,140
+  90:../../quantum/keymap_common.c ****             int when = (keycode >> 0x4) & 0x3;
+ 638               		.loc 1 90 0
+ 639 00c0 A901      		movw r20,r18
+ 640               	.LVL81:
+ 641 00c2 64E0      		ldi r22,4
+ 642               		1:
+ 643 00c4 440F      		lsl r20
+ 644 00c6 551F      		rol r21
+ 645 00c8 6A95      		dec r22
+ 646 00ca 01F4      		brne 1b
+ 647               	.LVL82:
+  93:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_SET(layer, when);
+ 648               		.loc 1 93 0
+ 649 00cc 4427      		clr r20
+ 650 00ce 5370      		andi r21,3
+ 651 00d0 842B      		or r24,r20
+ 652 00d2 952B      		or r25,r21
+ 653 00d4 73E0      		ldi r23,3
+ 654               		1:
+ 655 00d6 220F      		lsl r18
+ 656 00d8 331F      		rol r19
+ 657 00da 7A95      		dec r23
+ 658 00dc 01F4      		brne 1b
+ 659               	.LVL83:
+ 660 00de 2076      		andi r18,96
+ 661 00e0 3327      		clr r19
+ 662 00e2 00C0      		rjmp .L101
+ 663               	.LVL84:
+ 664               	.L48:
+ 665               	.LBE43:
+  95:../../quantum/keymap_common.c ****         } else if (type == 0x2) {
+ 666               		.loc 1 95 0
+ 667 00e4 8230      		cpi r24,2
+ 668 00e6 9105      		cpc r25,__zero_reg__
+ 669 00e8 01F4      		brne .L49
+ 670               	.LVL85:
+ 671               	.LBB44:
+  99:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_MOMENTARY(layer);
+ 672               		.loc 1 99 0
+ 673 00ea 922F      		mov r25,r18
+ 674 00ec 8827      		clr r24
+ 675               	.LVL86:
+ 100:../../quantum/keymap_common.c ****             return action;
+ 676               		.loc 1 100 0
+ 677 00ee 816F      		ori r24,241
+ 678 00f0 906A      		ori r25,160
+ 679 00f2 0895      		ret
+ 680               	.LVL87:
+ 681               	.L49:
+ 682               	.LBE44:
+ 101:../../quantum/keymap_common.c ****         } else if (type == 0x3) {
+ 683               		.loc 1 101 0
+ 684 00f4 8330      		cpi r24,3
+ 685 00f6 9105      		cpc r25,__zero_reg__
+ 686 00f8 01F4      		brne .L50
+ 687               	.LVL88:
+ 688               	.LBB45:
+ 105:../../quantum/keymap_common.c ****             action.code = ACTION_DEFAULT_LAYER_SET(layer);
+ 689               		.loc 1 105 0
+ 690 00fa A901      		movw r20,r18
+ 691 00fc 4370      		andi r20,3
+ 692 00fe 5527      		clr r21
+ 693 0100 81E0      		ldi r24,lo8(1)
+ 694 0102 90E0      		ldi r25,0
+ 695               	.LVL89:
+ 696 0104 00C0      		rjmp 2f
+ 697               		1:
+ 698 0106 880F      		lsl r24
+ 699 0108 991F      		rol r25
+ 700               		2:
+ 701 010a 4A95      		dec r20
+ 702 010c 02F4      		brpl 1b
+ 703 010e 9C68      		ori r25,140
+ 704               	.LVL90:
+ 705               	.L103:
+ 706 0110 43E0      		ldi r20,3
+ 707               		1:
+ 708 0112 220F      		lsl r18
+ 709 0114 331F      		rol r19
+ 710 0116 4A95      		dec r20
+ 711 0118 01F4      		brne 1b
+ 712               	.LVL91:
+ 713 011a 207E      		andi r18,224
+ 714 011c 3770      		andi r19,7
+ 715               	.LVL92:
+ 716               	.L101:
+ 106:../../quantum/keymap_common.c ****             return action;
+ 717               		.loc 1 106 0
+ 718 011e 822B      		or r24,r18
+ 719 0120 932B      		or r25,r19
+ 720 0122 0895      		ret
+ 721               	.LVL93:
+ 722               	.L50:
+ 723               	.LBE45:
+ 107:../../quantum/keymap_common.c ****         } else if (type == 0x4) {
+ 724               		.loc 1 107 0
+ 725 0124 0497      		sbiw r24,4
+ 726 0126 01F4      		brne .L51
+ 727               	.LVL94:
+ 728               	.LBB46:
+ 111:../../quantum/keymap_common.c ****             action.code = ACTION_LAYER_TOGGLE(layer);
+ 729               		.loc 1 111 0
+ 730 0128 A901      		movw r20,r18
+ 731 012a 4370      		andi r20,3
+ 732 012c 5527      		clr r21
+ 733 012e 81E0      		ldi r24,lo8(1)
+ 734 0130 90E0      		ldi r25,0
+ 735               	.LVL95:
+ 736 0132 00C0      		rjmp 2f
+ 737               		1:
+ 738 0134 880F      		lsl r24
+ 739 0136 991F      		rol r25
+ 740               		2:
+ 741 0138 4A95      		dec r20
+ 742 013a 02F4      		brpl 1b
+ 743 013c 9A68      		ori r25,138
+ 744 013e 00C0      		rjmp .L103
+ 745               	.LVL96:
+ 746               	.L47:
+ 747               	.LBE46:
+ 748               	.LBE42:
+ 120:../../quantum/keymap_common.c ****     } else if (keycode >= 0x7000 && keycode < 0x8000) {
+ 749               		.loc 1 120 0
+ 750 0140 C901      		movw r24,r18
+ 751 0142 9057      		subi r25,112
+ 752 0144 8115      		cp r24,__zero_reg__
+ 753 0146 9041      		sbci r25,16
+ 754 0148 00F4      		brsh .L52
+ 755               	.LVL97:
+ 756               	.LBB47:
+ 122:../../quantum/keymap_common.c ****         action.code = ACTION_MODS_TAP_KEY((keycode >> 0x8) & 0xF, keycode & 0xFF);
+ 757               		.loc 1 122 0
+ 758 014a C901      		movw r24,r18
+ 759 014c 9F70      		andi r25,15
+ 123:../../quantum/keymap_common.c ****         return action;
+ 760               		.loc 1 123 0
+ 761 014e 9062      		ori r25,32
+ 762               	.LVL98:
+ 763 0150 0895      		ret
+ 764               	.LVL99:
+ 765               	.L52:
+ 766               	.LBE47:
+ 124:../../quantum/keymap_common.c ****     } else if (keycode >= 0x8000 && keycode < 0x9000) {
+ 767               		.loc 1 124 0
+ 768 0152 C901      		movw r24,r18
+ 769 0154 9058      		subi r25,-128
+ 770 0156 8115      		cp r24,__zero_reg__
+ 771 0158 9041      		sbci r25,16
+ 772 015a 00F4      		brsh .L51
+ 773               	.LVL100:
+ 774               	.LBB48:
+ 126:../../quantum/keymap_common.c ****         action.code = ACTION_LAYER_TAP_KEY((keycode >> 0x8) & 0xF, keycode & 0xFF);
+ 775               		.loc 1 126 0
+ 776 015c C901      		movw r24,r18
+ 777 015e 9F70      		andi r25,15
+ 127:../../quantum/keymap_common.c ****         return action;
+ 778               		.loc 1 127 0
+ 779 0160 906A      		ori r25,160
+ 780               	.LVL101:
+ 781 0162 0895      		ret
+ 782               	.LVL102:
+ 783               	.L51:
+ 784               	.LBE48:
+ 139:../../quantum/keymap_common.c ****     switch (keycode) {
+ 785               		.loc 1 139 0
+ 786 0164 203E      		cpi r18,-32
+ 787 0166 3105      		cpc r19,__zero_reg__
+ 788 0168 00F4      		brsh .L54
+ 789 016a 203C      		cpi r18,-64
+ 790 016c 3105      		cpc r19,__zero_reg__
+ 791 016e 00F4      		brsh .L55
+ 792 0170 2133      		cpi r18,49
+ 793 0172 3105      		cpc r19,__zero_reg__
+ 794 0174 01F4      		brne .+2
+ 795 0176 00C0      		rjmp .L56
+ 796 0178 00F4      		brsh .L57
+ 797 017a 2932      		cpi r18,41
+ 798 017c 3105      		cpc r19,__zero_reg__
+ 799 017e 01F4      		brne .+2
+ 800 0180 00C0      		rjmp .L58
+ 801 0182 2A32      		cpi r18,42
+ 802 0184 3105      		cpc r19,__zero_reg__
+ 803 0186 01F4      		brne .+2
+ 804 0188 00C0      		rjmp .L59
+ 805 018a 00C0      		rjmp .L53
+ 806               	.L57:
+ 807 018c 2933      		cpi r18,57
+ 808 018e 3105      		cpc r19,__zero_reg__
+ 809 0190 01F0      		breq .L60
+ 810 0192 2238      		cpi r18,-126
+ 811 0194 3105      		cpc r19,__zero_reg__
+ 812 0196 01F0      		breq .L60
+ 813 0198 2533      		cpi r18,53
+ 814 019a 3105      		cpc r19,__zero_reg__
+ 815 019c 01F4      		brne .+2
+ 816 019e 00C0      		rjmp .L61
+ 817 01a0 00C0      		rjmp .L53
+ 818               	.L54:
+ 819 01a2 233E      		cpi r18,-29
+ 820 01a4 3105      		cpc r19,__zero_reg__
+ 821 01a6 01F0      		breq .L62
+ 822 01a8 00F4      		brsh .L63
+ 823 01aa 203E      		cpi r18,-32
+ 824 01ac 3105      		cpc r19,__zero_reg__
+ 825 01ae 01F0      		breq .L64
+ 826 01b0 223E      		cpi r18,-30
+ 827 01b2 3105      		cpc r19,__zero_reg__
+ 828 01b4 01F0      		breq .L65
+ 829 01b6 00C0      		rjmp .L53
+ 830               	.L63:
+ 831 01b8 263E      		cpi r18,-26
+ 832 01ba 3105      		cpc r19,__zero_reg__
+ 833 01bc 01F0      		breq .L66
+ 834 01be 273E      		cpi r18,-25
+ 835 01c0 3105      		cpc r19,__zero_reg__
+ 836 01c2 01F0      		breq .L67
+ 837 01c4 00C0      		rjmp .L53
+ 838               	.L55:
+ 141:../../quantum/keymap_common.c ****             return keymap_fn_to_action(keycode);
+ 839               		.loc 1 141 0
+ 840 01c6 C901      		movw r24,r18
+ 841 01c8 0E94 0000 		call keymap_fn_to_action
+ 842               	.LVL103:
+ 843 01cc 0895      		ret
+ 844               	.LVL104:
+ 845               	.L60:
+ 145:../../quantum/keymap_common.c ****             if (keymap_config.swap_control_capslock || keymap_config.capslock_to_control) {
+ 846               		.loc 1 145 0
+ 847 01ce 8091 0000 		lds r24,keymap_config
+ 848 01d2 80FD      		sbrc r24,0
+ 849 01d4 00C0      		rjmp .L68
+ 145:../../quantum/keymap_common.c ****             if (keymap_config.swap_control_capslock || keymap_config.capslock_to_control) {
+ 850               		.loc 1 145 0 is_stmt 0 discriminator 1
+ 851 01d6 81FF      		sbrs r24,1
+ 852 01d8 00C0      		rjmp .L53
+ 853               	.L68:
+ 146:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_LCTL);
+ 854               		.loc 1 146 0 is_stmt 1
+ 855 01da 80EE      		ldi r24,lo8(-32)
+ 856 01dc 90E0      		ldi r25,0
+ 857 01de 00C0      		rjmp .L102
+ 858               	.L64:
+ 150:../../quantum/keymap_common.c ****             if (keymap_config.swap_control_capslock) {
+ 859               		.loc 1 150 0
+ 860 01e0 8091 0000 		lds r24,keymap_config
+ 861 01e4 80FF      		sbrs r24,0
+ 862 01e6 00C0      		rjmp .L68
+ 151:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_CAPSLOCK);
+ 863               		.loc 1 151 0
+ 864 01e8 89E3      		ldi r24,lo8(57)
+ 865 01ea 90E0      		ldi r25,0
+ 866 01ec 00C0      		rjmp .L102
+ 867               	.L65:
+ 155:../../quantum/keymap_common.c ****             if (keymap_config.swap_lalt_lgui) {
+ 868               		.loc 1 155 0
+ 869 01ee 8091 0000 		lds r24,keymap_config
+ 870 01f2 82FF      		sbrs r24,2
+ 871 01f4 00C0      		rjmp .L70
+ 872               	.L72:
+ 156:../../quantum/keymap_common.c ****                 if (keymap_config.no_gui) {
+ 873               		.loc 1 156 0
+ 874 01f6 8091 0000 		lds r24,keymap_config
+ 875 01fa 84FF      		sbrs r24,4
+ 876 01fc 00C0      		rjmp .L71
+ 877               	.L74:
+ 157:../../quantum/keymap_common.c ****                     return keycode_to_action(ACTION_NO);
+ 878               		.loc 1 157 0
+ 879 01fe 80E0      		ldi r24,0
+ 880 0200 90E0      		ldi r25,0
+ 881 0202 00C0      		rjmp .L102
+ 882               	.L71:
+ 159:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_LGUI);
+ 883               		.loc 1 159 0
+ 884 0204 83EE      		ldi r24,lo8(-29)
+ 885 0206 90E0      		ldi r25,0
+ 886 0208 00C0      		rjmp .L102
+ 887               	.L62:
+ 163:../../quantum/keymap_common.c ****             if (keymap_config.swap_lalt_lgui) {
+ 888               		.loc 1 163 0
+ 889 020a 8091 0000 		lds r24,keymap_config
+ 890 020e 82FF      		sbrs r24,2
+ 891 0210 00C0      		rjmp .L72
+ 892               	.L70:
+ 161:../../quantum/keymap_common.c ****             return keycode_to_action(KC_LALT);
+ 893               		.loc 1 161 0
+ 894 0212 82EE      		ldi r24,lo8(-30)
+ 895 0214 90E0      		ldi r25,0
+ 896 0216 00C0      		rjmp .L102
+ 897               	.L66:
+ 171:../../quantum/keymap_common.c ****             if (keymap_config.swap_ralt_rgui) {
+ 898               		.loc 1 171 0
+ 899 0218 8091 0000 		lds r24,keymap_config
+ 900 021c 83FF      		sbrs r24,3
+ 901 021e 00C0      		rjmp .L73
+ 902               	.L75:
+ 172:../../quantum/keymap_common.c ****                 if (keymap_config.no_gui) {
+ 903               		.loc 1 172 0
+ 904 0220 8091 0000 		lds r24,keymap_config
+ 905 0224 84FD      		sbrc r24,4
+ 906 0226 00C0      		rjmp .L74
+ 175:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_RGUI);
+ 907               		.loc 1 175 0
+ 908 0228 87EE      		ldi r24,lo8(-25)
+ 909 022a 90E0      		ldi r25,0
+ 910 022c 00C0      		rjmp .L102
+ 911               	.L67:
+ 179:../../quantum/keymap_common.c ****             if (keymap_config.swap_ralt_rgui) {
+ 912               		.loc 1 179 0
+ 913 022e 8091 0000 		lds r24,keymap_config
+ 914 0232 83FF      		sbrs r24,3
+ 915 0234 00C0      		rjmp .L75
+ 916               	.L73:
+ 177:../../quantum/keymap_common.c ****             return keycode_to_action(KC_RALT);
+ 917               		.loc 1 177 0
+ 918 0236 86EE      		ldi r24,lo8(-26)
+ 919 0238 90E0      		ldi r25,0
+ 920 023a 00C0      		rjmp .L102
+ 921               	.L61:
+ 187:../../quantum/keymap_common.c ****             if (keymap_config.swap_grave_esc) {
+ 922               		.loc 1 187 0
+ 923 023c 8091 0000 		lds r24,keymap_config
+ 924 0240 85FF      		sbrs r24,5
+ 925 0242 00C0      		rjmp .L76
+ 926               	.L77:
+ 188:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_ESC);
+ 927               		.loc 1 188 0
+ 928 0244 89E2      		ldi r24,lo8(41)
+ 929 0246 90E0      		ldi r25,0
+ 930 0248 00C0      		rjmp .L102
+ 931               	.L58:
+ 192:../../quantum/keymap_common.c ****             if (keymap_config.swap_grave_esc) {
+ 932               		.loc 1 192 0
+ 933 024a 8091 0000 		lds r24,keymap_config
+ 934 024e 85FF      		sbrs r24,5
+ 935 0250 00C0      		rjmp .L77
+ 936               	.L76:
+ 190:../../quantum/keymap_common.c ****             return keycode_to_action(KC_GRAVE);
+ 937               		.loc 1 190 0
+ 938 0252 85E3      		ldi r24,lo8(53)
+ 939 0254 90E0      		ldi r25,0
+ 940 0256 00C0      		rjmp .L102
+ 941               	.L56:
+ 197:../../quantum/keymap_common.c ****             if (keymap_config.swap_backslash_backspace) {
+ 942               		.loc 1 197 0
+ 943 0258 8091 0000 		lds r24,keymap_config
+ 944 025c 86FF      		sbrs r24,6
+ 945 025e 00C0      		rjmp .L78
+ 946               	.L79:
+ 198:../../quantum/keymap_common.c ****                 return keycode_to_action(KC_BSPACE);
+ 947               		.loc 1 198 0
+ 948 0260 8AE2      		ldi r24,lo8(42)
+ 949 0262 90E0      		ldi r25,0
+ 950 0264 00C0      		rjmp .L102
+ 951               	.L59:
+ 202:../../quantum/keymap_common.c ****             if (keymap_config.swap_backslash_backspace) {
+ 952               		.loc 1 202 0
+ 953 0266 8091 0000 		lds r24,keymap_config
+ 954 026a 86FF      		sbrs r24,6
+ 955 026c 00C0      		rjmp .L79
+ 956               	.L78:
+ 200:../../quantum/keymap_common.c ****             return keycode_to_action(KC_BSLASH);
+ 957               		.loc 1 200 0
+ 958 026e 81E3      		ldi r24,lo8(49)
+ 959 0270 90E0      		ldi r25,0
+ 960 0272 00C0      		rjmp .L102
+ 961               	.L53:
+ 208:../../quantum/keymap_common.c ****             return keycode_to_action(keycode);
+ 962               		.loc 1 208 0
+ 963 0274 C901      		movw r24,r18
+ 964               	.L102:
+ 965 0276 0E94 0000 		call keycode_to_action
+ 966               	.LVL105:
+ 210:../../quantum/keymap_common.c **** }
+ 967               		.loc 1 210 0
+ 968 027a 0895      		ret
+ 969               		.cfi_endproc
+ 970               	.LFE103:
+ 972               		.section	.progmem.data.__c.4651,"a",@progbits
+ 975               	__c.4651:
+ 976 0000 0A44 4542 		.string	"\nDEBUG: enabled.\n"
+ 976      5547 3A20 
+ 976      656E 6162 
+ 976      6C65 642E 
+ 976      0A00 
+ 977               		.comm	keymap_config,2,1
+ 978               		.text
+ 979               	.Letext0:
+ 980               		.file 3 "/usr/local/CrossPack-AVR-20131216/avr/include/stdint.h"
+ 981               		.file 4 "../../tmk_core/common/keyboard.h"
+ 982               		.file 5 "../../tmk_core/common/keycode.h"
+ 983               		.file 6 "../../tmk_core/common/action_code.h"
+ 984               		.file 7 "../../tmk_core/common/action_macro.h"
+ 985               		.file 8 "../../tmk_core/common/action.h"
+ 986               		.file 9 "../../tmk_core/common/debug.h"
+ 987               		.file 10 "../../quantum/keymap_common.h"
+ 988               		.file 11 "../../tmk_core/protocol/lufa/LUFA-git/LUFA/Drivers/USB/Core/USBTask.h"
+ 989               		.file 12 "../../tmk_core/common/avr/xprintf.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 keymap_common.c
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:2      *ABS*:0000003e __SP_H__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:3      *ABS*:0000003d __SP_L__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:4      *ABS*:0000003f __SREG__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:12     .text.keycode_to_action:00000000 keycode_to_action
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:325    .text.action_get_macro:00000000 action_get_macro
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:345    .text.action_function:00000000 action_function
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:361    .text.keymap_key_to_keycode:00000000 keymap_key_to_keycode
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:405    .text.keymap_fn_to_action:00000000 keymap_fn_to_action
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:439    .text.keymap_func_to_action:00000000 keymap_func_to_action
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:473    .text.action_for_key:00000000 action_for_key
+/var/folders/1b/xfvjmdyj6l31z1llzpnz5cwr0000gn/T//ccHZ0BrN.s:975    .progmem.data.__c.4651:00000000 __c.4651
+                            *COM*:00000002 keymap_config
+
+UNDEFINED SYMBOLS
+keymaps
+fn_actions
+clear_keyboard
+bootloader_jump
+xputs
+debug_config
+__do_clear_bss
