@@ -7,8 +7,8 @@ Flash `keymaps/keymap_osx_keikun17.hex`
 
 ## Remapping
 
-1. Edit `keymaps/keymap_osx_keikun17.` 
-2. Read Compile Instructions below
+1. Edit `keymaps/keymap_osx_keikun17.c` 
+2. Read compile instructions below
 
 ## Compile
 
