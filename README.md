@@ -15,25 +15,26 @@ Flash `keymaps/keymap_osx_keikun17.hex`
 - Download and install Crosspack (previously AVR macpack)
 - brew install dfu-programmer
 - run `make clean & make KEYMAP=osx_keikun17`
-- Flash `ergodox_ez.hex` at the root dir of this project`
+- Flash `ergodox_ez.hex` at the root dir of this projecck indenting selections   t
 
 
 ```
 /* Keymap 0: Basic layer
+/* Keymap 0: Basic layer
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
- * |   =    |   1  |   2  |   3  |   4  |   5  | LEFT |           | RIGHT|   6  |   7  |   8  |   9  |   0  |   -    |
+ * |  Grv   |   1  |   2  |   3  |   4  |   5  |  =   |           |   -  |   6  |   7  |   8  |   9  |   0  | Bckspc |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * | Del    |   Q  |   W  |   E  |   R  |   T  |  L1  |           |  L1  |   Y  |   U  |   I  |   O  |   P  |   \    |
+ * |  Tab   |   Q  |   W  |   E  |   R  |   T  |  '"  |           |  L1  |   Y  |   U  |   I  |   O  |   P  |   \    |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |Ctrl/Esc|   A  |   S  |   D  |   F  |   G  |------|           |------|   H  |   J  |   K  |   L  |; / L2|  LGui  |
+ * |  Ctrl  |   A  |   S  |   D  |   F  |   G  |------|           |------|   H  |   J  |   K  |   L  |; / L2|  LGui  |
  * |--------+------+------+------+------+------| Hyper|           | Meh  |------+------+------+------+------+--------|
  * | LShift |Z/Ctrl|   X  |   C  |   V  |   B  |      |           |      |   N  |   M  |   ,  |   .  |//Ctrl| RShift |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |Grv/L1|  '"  |AltShf| Left | Right|                                       |  Up  | Down |   [  |   ]  | ~L1  |
+ *   | ~L1  |  Alt |AltShf| Left | Right|                                       |  Up  | Down |   [  |   ]  | ~L1  |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
- *                                        | App  | LGui |       | Alt  |Ctrl/Esc|
+ *                                        |  '"  | LGui |       | Alt  |Ctrl/Esc|
  *                                 ,------|------|------|       |------+--------+------.
  *                                 |      |      | Home |       | PgUp |        |      |
  *                                 | Space|Backsp|------|       |------|  Tab   |Enter |
