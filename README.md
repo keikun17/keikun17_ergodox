@@ -3,11 +3,11 @@
 
 # Instructions
 
-Flash `keymaps/keymap_osx_keikun17.hex` 
+Flash `keymaps/keymap_osx_keikun17.hex`
 
 ## Remapping
 
-1. Edit `keymaps/keymap_osx_keikun17.c` 
+1. Edit `keymaps/keymap_osx_keikun17.c`
 2. Read compile instructions below
 
 ## Compile
@@ -23,9 +23,9 @@ Flash `keymaps/keymap_osx_keikun17.hex`
 /* Keymap 0: Basic layer
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
- * |  Grv   |   1  |   2  |   3  |   4  |   5  |  =   |           |   -  |   6  |   7  |   8  |   9  |   0  | Bckspc |
+ * |  Grv   |   1  |   2  |   3  |   4  |   5  |  '"  |           |  L1  |   6  |   7  |   8  |   9  |   0  | Bckspc |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |  Tab   |   Q  |   W  |   E  |   R  |   T  |  '"  |           |  L1  |   Y  |   U  |   I  |   O  |   P  |   \    |
+ * |  Tab   |   Q  |   W  |   E  |   R  |   T  |  -_  |           |  =+  |   Y  |   U  |   I  |   O  |   P  |   \    |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |  Ctrl  |   A  |   S  |   D  |   F  |   G  |------|           |------|   H  |   J  |   K  |   L  |; / L2|  LGui  |
  * |--------+------+------+------+------+------| Hyper|           | Meh  |------+------+------+------+------+--------|
